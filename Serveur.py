@@ -293,7 +293,7 @@ class Releve(threading.Thread):
                         self.lenth = self.msg_recu.split("\\")[4]
                         self.dests = self.msg_recu.split("\\")[5:]
                         for self.x in self.dests:
-                            self.fileinfo = open("clients/messages/"+self.x+"/"+self.nom+".info", "w")
+                            self.fileinfo = open("clients/groups/"+self.x+"/"+self.nom+".info", "w")
                             self.fileinfo.write("Key="+self.key+"\nMembers="+", ".join(self.dests))
                             self.fileinfo.close()
                         self.client.send("GROUP\\CREATED")
