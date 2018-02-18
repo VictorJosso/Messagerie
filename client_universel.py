@@ -22,6 +22,33 @@ import generate_random_passwords as r_pass
 hote = "josso.fr"
 port = 26281
 
+colours = {
+	"default"    :    "\033[0m",
+	# style
+	"bold"       :    "\033[1m",
+	"underline"  :    "\033[4m",
+	"blink"      :    "\033[5m",
+	"reverse"    :    "\033[7m",
+	"concealed"  :    "\033[8m",
+	# couleur texte
+	"black"      :    "\033[30m",
+	"red"        :    "\033[31m",
+	"green"      :    "\033[32m",
+	"yellow"     :    "\033[33m",
+	"blue"       :    "\033[34m",
+	"magenta"    :    "\033[35m",
+	"cyan"       :    "\033[36m",
+	"white"      :    "\033[37m",
+	# couleur fond
+	"on_black"   :    "\033[40m",
+	"on_red"     :    "\033[41m",
+	"on_green"   :    "\033[42m",
+	"on_yellow"  :    "\033[43m",
+	"on_blue"    :    "\033[44m",
+	"on_magenta" :    "\033[45m",
+	"on_cyan"    :    "\033[46m",
+	"on_white"   :    "\033[47m" }
+
 class Releve(threading.Thread):
     def __init__(self):
         self.msg_received = False
@@ -314,7 +341,7 @@ def envoyer_message(dest = None):
         else:
             menu_text = ""
             menu_text += "\nVoici la liste de vos amis. Tapez leur numero pour leur envoyer un message.\n[ 0 ] Retour au menu principal\n"
-            rep_available = ["0"]
+            rep_available = ["0", "G"]
             msg_from_server = msg_from_server.split(", ")
             for x in msg_from_server:
                 if x == " ":
@@ -329,6 +356,7 @@ def envoyer_message(dest = None):
             if len(rep_available) > 1 :
                 menu_text += "[ - ] Supprimer un ami.\n"
                 rep_available.append("-")
+            menu_text += "[ G ] Créer un nouveau groupe.\n"
             menu_text += "\n"
             rep = verif_answer(menu_text, rep_available, "Non pris en charge... Reessayer.")
             if rep == "+":
@@ -368,6 +396,44 @@ def envoyer_message(dest = None):
             elif rep == "0":
                 afficher_menu()
                 return 0
+            elif rep == "G":
+                nom = raw_input("Donnez un nom à ce nouveau groupe.\nLaissez vide pour annuler et revenir en arriere.\n>>")
+                if len(nom)==0:
+                    envoyer_message()
+                    return 0
+                else:
+                    friends_to_add = []
+                    while True:
+                        menu_text = "Entrez le numero de l'ami à ajouter au groupe.\n[ 0 ] Annuler la création du groupe et retourner au menu précédent.\n"
+                        rep_available = ["0"]
+                        if not len(friends_to_add) == 0:
+                            menu_text += "[ - ] Retirer des amis déjà ajouté.\n"
+                            rep_available.append("-")
+                        for x in range(len(msg_from_server)):
+                            if not msg_from_server[x] in friends_to_add:
+                                menu_text += "[ "+str(x+1)+" ] "+msg_from_server[x]+"\n"
+                                rep_available.append(str(x+1))
+                            else:
+                                menu_text += "[ + ] "+msg_from_server[x]+"\n"
+                        if len(friends_to_add)>1:
+                            menu_text+="[ "+str(len(msg_from_server)+1)+ " ] Valider et créer le groupe.\n"
+                            rep_available.append(str(len(msg_from_server)+1))
+                        rep = verif_answer(menu_text, rep_available, "Valeur non pris en charge... Réessayer.")
+                        if rep == "0":
+                            envoyer_message()
+                            return 0
+                        elif rep == "-":
+                            menu_text = "Entrez le numéro de l'ami qui ne doit pas être ajouté au groupe.\n[ 0 ] Annuler et retourner au menu précédent.\n"
+                            rep_available = ["0"]
+                            for x in range(len(friends_to_add)):
+                                menu_text += "[ "+str(x+1)+" ] "+friends_to_add[x]+"\n"
+                                rep_available.append(str(x+1))
+                            rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
+                            friends_to_add.pop(int(rep)-1)
+                        elif rep==str(len(msg_from_server)+1):
+                            pass
+                        else:
+                            friends_to_add.append(msg_from_server[int(rep)-1])
             else:
                 print msg_from_server[int(rep)-1],"selectionne."
                 if not os.path.exists(username+os.sep+"messages"+os.sep+msg_from_server[int(rep)-1]):
