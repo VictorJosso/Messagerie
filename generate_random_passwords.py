@@ -3,5 +3,9 @@ import random
 def generate(lenth):
     pwd = ""
     for x in range(int(lenth)):
-        pwd+=chr(random.randint(33,122))
+        rang = random.randint(33, 122)
+        if not rang == 92:
+            pwd+=chr(rang)
+        else:
+            pass
     return pwd

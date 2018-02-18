@@ -19,7 +19,7 @@ import Crypt as crpt
 import Uncrypt as ucrpt
 import generate_random_passwords as r_pass
 
-hote = "josso.fr"
+hote = "127.0.0.1"
 port = 26281
 
 colours = {
@@ -370,7 +370,7 @@ def envoyer_message(dest = None):
                         print "Cet ami n'existe pas !"
                     elif msg_from_server == "ADD\\friend\\REFUSED":
                         print "Acces refuse !"
-                elif len(friend_to_add) == 0:
+                elif len(friendpass_to_add) == 0:
                     envoyer_message()
                     return 0
             elif rep == "-":
@@ -431,7 +431,20 @@ def envoyer_message(dest = None):
                             rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
                             friends_to_add.pop(int(rep)-1)
                         elif rep==str(len(msg_from_server)+1):
-                            pass
+                            key = r_pass.generate(256)
+                            connection_server.send("START\\group\\"+nom+"\\"+key+"\\"+str(len(friends_to_add))+"\\"+"\\".join(friends_to_add))
+                            msg_from_server = attendre_reponse()
+                            if msg_from_server == "GROUP\\CREATED":
+                                print "Groupe créé avec succès."
+                                try:
+                                    os.mkdir(username+os.sep+"groups")
+                                except:
+                                    pass
+                                f=open(username+os.sep+"groups"+os.sep+nom+".info", "w")
+                                f.write("Key="+key+"\nMembers="+", ".join(friends_to_add))
+                                f.close()
+                                break
+
                         else:
                             friends_to_add.append(msg_from_server[int(rep)-1])
             else:

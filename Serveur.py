@@ -17,7 +17,7 @@ def log(text):
     log.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"]"+text+"\n")
     log.close()
 
-    
+
 class Client:
     """
     Cette classe contient toutes les informations du client connecté (informations de connexion, username, id, amis, etc...).
@@ -286,6 +286,23 @@ class Releve(threading.Thread):
                         log("Le client "+self.client.infos+" a tente de demarrer une nouvelle conversation avec "+self.msg_recu.split("\\")[2]+" sans etre connecte. Il va etre deconnecte.")
                         self.client.send("S_CONV\\REFUSED")
                         self.client.disconnect("Action non autorisee > "+self.msg_recu)
+                elif self.msg_recu.split("\\")[1] == "group" and len(self.msg_recu.split("\\")) > 6 :
+                    if self.client.logged_in:
+                        self.nom = self.msg_recu.split("\\")[2]
+                        self.key = self.msg_recu.split("\\")[3]
+                        self.lenth = self.msg_recu.split("\\")[4]
+                        self.dests = self.msg_recu.split("\\")[5:]
+                        for self.x in self.dests:
+                            self.fileinfo = open("clients/messages/"+self.x+"/"+self.nom+".info", "w")
+                            self.fileinfo.write("Key="+self.key+"\nMembers="+", ".join(self.dests))
+                            self.fileinfo.close()
+                        self.client.send("GROUP\\CREATED")
+                    else:
+                        log("Le client "+self.client.infos+" a tente de demarrer un nouveau groupe avec "+self.msg_recu.split("\\")[5:]+" sans etre enregistre. Il va etre deconnecte.")
+                        self.client.send("GROUP\\REFUSED")
+                        self.client.disconnect("Action non autorisee > "+self.msg_recu)
+
+
             else:
                 self.client.send("ACCES DENIED")
                 log("Le client "+str(self.client.infos)+" a envoye un message non repertorie. Son acces a ete refuse. Il va etre deconnecte.")
