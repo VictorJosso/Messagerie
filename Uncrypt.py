@@ -1,3 +1,5 @@
+"""Code par Victor Josso"""
+
 from getpass import getpass
 import binascii
 import math

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+"""Code par Victor Josso"""
 from __future__ import unicode_literals
 import socket
 import select

@@ -1,3 +1,4 @@
+"""Code par Victor Josso"""
 import pickle
 import os
 import getpass

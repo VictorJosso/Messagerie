@@ -1,3 +1,5 @@
+"""Code par Victor Josso"""
+
 import random
 
 def generate(lenth):
