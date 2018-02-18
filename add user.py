@@ -40,6 +40,7 @@ f.close()
 os.mkdir("clients/messages/"+username)
 os.mkdir("clients/Backups/"+username)
 os.mkdir("clients/Keys/"+username)
+os.mkdir("clients/groups/"+username)
 
 f = open("clients/convert-tables/users_ids","r")
 u = pickle.Unpickler(f)
