@@ -207,15 +207,22 @@ class Releve(threading.Thread):
                         self.client.send("GET\\REFUSED")
                         log("Le client "+str(self.client.infos)+" a demande une sauvegarde sans etre connecte. Son acces a ete refuse. Il va etre deconnecte.")
                         self.client.disconnect("Action non autorisee > "+self.msg_recu)
-            elif self.msg_recu.split("\\")[0] == "SEND" and len(self.msg_recu.split("\\")) > 2:
+            elif self.msg_recu.split("\\")[0] == "SEND" and len(self.msg_recu.split("\\")) > 3:
                 if self.client.logged_in:
-                    self.f = open("clients/messages/"+self.msg_recu.split("\\")[1]+"/"+self.client.username,"a")
-                    self.f.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+self.client.username+"]"+self.msg_recu.split("\\")[2]+"\n")
-                    self.f.close()
-                    self.client.send("SEND\\OK")
+                    if self.msg_recu.split("\\")[1] == "SINGLE":
+                        self.f = open("clients/messages/"+self.msg_recu.split("\\")[2]+"/"+self.client.username,"a")
+                        self.f.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+self.client.username+"]"+self.msg_recu.split("\\")[3]+"\n")
+                        self.f.close()
+                        self.client.send("SEND\\OK")
+                    else:
+                        for self.x in self.msg_recu.split("\\")[2].split(","):
+                            self.f = open("clients/groups/"+self.x+"/"+self.msg_recu.split('\\')[1],"a")
+                            self.f.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+self.client.username+"]"+self.msg_recu.split("\\")[3]+"\n")
+                            self.f.close()
+                        self.client.send("SEND\\OK")
                 else :
                     self.client.send("SEND\\REFUSED")
-                    log("Le client "+str(self.client.infos)+" a tente d'envoyer un message a "+self.msg_recu.split("\\")[1]+" alors qu'il n'etait pas connecte. Son acces a ete refuse. Il va etre deconnecte.")
+                    log("Le client "+str(self.client.infos)+" a tente d'envoyer un message a "+self.msg_recu.split("\\")[2]+" alors qu'il n'etait pas connecte. Son acces a ete refuse. Il va etre deconnecte.")
                     self.client.disconnect("Action non autorisee > "+self.msg_recu)
             elif self.msg_recu.split("\\")[0] == "ADD" and len(self.msg_recu.split("\\")) > 1:
                 if self.msg_recu.split("\\")[1] == "friend" and len(self.msg_recu.split("\\")) > 2:
@@ -264,7 +271,13 @@ class Releve(threading.Thread):
                     self.f.write("\\".join(self.msg_recu.split("\\")[1:]))
                     self.f.close()"""
                     self.bkp_file = open("clients/Backups/"+self.client.username+"/backup.zip", 'wb')
-                    self.bkp = binascii.unhexlify("\\".join(self.msg_recu.split("\\")[1:]))
+                    try:
+                        self.bkp = binascii.unhexlify("\\".join(self.msg_recu.split("\\")[1:]))
+                    except TypeError as bin_error :
+                        self.f = open("crash-report.txt", "a")
+                        self.f.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"]\n"+str(bin_error)+"\n\n"+"Blocking on : "+"\\".join(self.msg_recu.split("\\")[1:])+"\n"+"-"*40)
+                        self.f.close()
+                        print "Erreur lors de la sauvegarde"
                     self.bkp_file.write(self.bkp)
                     self.bkp_file.close()
                 else:

@@ -102,7 +102,7 @@ def backup():
     bkp_file.close()
     os.remove(backup_crpt)
     with open("bkp_sended.txt", "a") as f:
-        f.write(msg_to_send)
+        f.write(msg_to_send+"\n\n")
     return backup_crpt
 
 def dezip(filezip, pathdst = ''):
@@ -253,7 +253,7 @@ def decrypter_conv(fichier, pwd, dest):
     while os.path.exists(fichier):
         os.remove(fichier)
 
-def inbox(already_in = False):
+def inbox(already_in = False, typeofconv = None):
     global sender
     connection_server.send(("GET\\unreaded"))
     msg_from_server = attendre_reponse()
@@ -279,7 +279,8 @@ def inbox(already_in = False):
             trier_conv(username+os.sep+"messages"+os.sep+msg_from_server.split("\\")[2])
     if not already_in:
         convs = os.listdir(username+os.sep+"messages")
-        if len(convs) == 0:
+        groups = os.listdir(username+os.sep+"groups")
+        if len(convs) == 0 and len(groups) == 0:
             print "Vous n'avez aucun message. Retour au Menu principal."
             afficher_menu()
             return 0
@@ -289,30 +290,62 @@ def inbox(already_in = False):
         for x in range(len(convs)):
             menu_text += "[ "+str(x+1)+" ] "+ convs[x]+"\n"
             rep_available.append(str(x+1))
+        for x in range(len(groups)):
+            if not groups[x].split(".")[len(groups[x].split("."))-1]=="info":
+                menu_text+= "[ "+str(len(convs)+x+1)+" ] "+groups[x]+" (Groupe)\n"
+                rep_available.append(str(len(convs)+x+1))
+            else:
+                pass
         menu_text += "\n"
         rep = verif_answer(menu_text,rep_available, "Non pris en charge... Reessayer.")
         if rep == "0":
             afficher_menu()
             return 0
-        sender = convs[int(rep)-1]
-    print "Voici votre conversation avec "+sender+"\n\n"
-    f = open(username+os.sep+"messages"+os.sep+sender,'r')
-    disc = f.read()
-    f.close()
-    for x in disc.split("\n"):
-        if x == "":
-            continue
-        if x.split("]")[0].split("\\")[1] == username:
-            print "Vous :", x.split("]")[1]
-        else :
-            print x.split("]")[0].split("\\")[1],":",x.split(']')[1]
-    rep_available = ["r","m"]
-    rep = verif_answer("\nTaper r pour repondre, m pour retourner au menu precedent.", rep_available, "Valeur non pris en charge... Veuillez reessayer !")
-    if rep == "r":
-        envoyer_message(dest = sender)
-        inbox(already_in = True)
-    else:
-        inbox()
+        elif int(rep)<=len(convs):
+            sender = convs[int(rep)-1]
+            typeofconv = "single"
+        elif int(rep)>len(convs):
+            sender = groups[int(rep)-1-len(convs)]
+            typeofconv = "multiple"
+    if typeofconv == "single":
+        print "Voici votre conversation avec "+sender+"\n\n"
+        f = open(username+os.sep+"messages"+os.sep+sender,'r')
+        disc = f.read()
+        f.close()
+        for x in disc.split("\n"):
+            if x == "":
+                continue
+            if x.split("]")[0].split("\\")[1] == username:
+                print "Vous :", x.split("]")[1]
+            else :
+                print x.split("]")[0].split("\\")[1],":",x.split(']')[1]
+        rep_available = ["r","m"]
+        rep = verif_answer("\nTaper r pour repondre, m pour retourner au menu precedent.", rep_available, "Valeur non pris en charge... Veuillez reessayer !")
+        if rep == "r":
+            envoyer_message(dest = sender, typeofconv = "single")
+            inbox(already_in = True, typeofconv = "single")
+        else:
+            inbox()
+    elif typeofconv == "multiple":
+        print "Voici votre conversation de groupe avec "+sender+"\n\n"
+        f = open(username+os.sep+"groups"+os.sep+sender,'r')
+        disc = f.read()
+        f.close()
+        for x in disc.split("\n"):
+            if x == "":
+                continue
+            if x.split("]")[0].split("\\")[1] == username:
+                print "Vous :", x.split("]")[1]
+            else :
+                print x.split("]")[0].split("\\")[1],":",x.split(']')[1]
+        rep_available = ["r","m"]
+        rep = verif_answer("\nTaper r pour repondre, m pour retourner au menu precedent.", rep_available, "Valeur non pris en charge... Veuillez reessayer !")
+        if rep == "r":
+            envoyer_message(dest = sender, typeofconv = "multiple")
+            inbox(already_in = True, typeofconv = "multiple")
+        else:
+            inbox()
+
 
 def afficher_menu():
     if server_reachable:
@@ -333,7 +366,7 @@ def afficher_menu():
         elif rep == "2":
             inbox()
 
-def envoyer_message(dest = None):
+def envoyer_message(dest = None, typeofconv = None):
 
     if not dest:
         connection_server.send(("GET\\friends"))
@@ -445,6 +478,8 @@ def envoyer_message(dest = None):
                                 f=open(username+os.sep+"groups"+os.sep+nom+".info", "w")
                                 f.write("Key="+key+"\nMembers="+", ".join(friends_to_add))
                                 f.close()
+                                f=open(username+os.sep+"groups"+os.sep+nom, "w")
+                                f.close()
                                 break
 
                         else:
@@ -502,14 +537,24 @@ def envoyer_message(dest = None):
                     print "Le message n'a pas ete remis.\n\n"
         afficher_menu()
     else:
-        f = open(username+os.sep+"keys"+os.sep+dest+"key","r")
-        key = f.read()
-        f.close()
+        if typeofconv == "single":
+            f = open(username+os.sep+"keys"+os.sep+dest+"key","r")
+            key = f.read()
+            f.close()
+        elif typeofconv == "multiple":
+            f = open(username+os.sep+"groups"+os.sep+dest+".info", "r")
+            text = f.read()
+            key = text.split("\n")[0].split("=")[1]
+            nom = dest
+            dest = text.split('\n')[1].split("=")[1].split(", ")
         print "Tapez votre message ci dessous et appuyez sur entree pour l'envoyer. Laissez le champ vide pour annuler et retourner à la conversation."
         message = raw_input(">>")
         if not len(message) == 0:
             msg_crypted = crpt.crypt_message(message, key)
-            connection_server.send(("SEND\\"+dest+"\\"+msg_crypted))
+            if typeofconv == "single":
+                connection_server.send(("SEND\\SINGLE\\"+dest+"\\"+msg_crypted))
+            else:
+                connection_server.send("SEND\\"+nom+"\\"+",".join(dest)+"\\"+msg_crypted)
             msg_from_server = attendre_reponse()
             if msg_from_server == "SEND\\OK":
                 prev_conv = ""
