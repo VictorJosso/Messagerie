@@ -82,20 +82,20 @@ def verif_path(path):
 
 def setup(path_given = False):
     if not path_given :
-        fichier = raw_input("Quel est le chemin d'acces au fichier a crypter ? > ")
+        fichier = raw_input("Quel est le chemin d'acces au fichier à chiffrer ? > ")
         while not verif_path(fichier):
             print "Ce fichier est introuvable... Veuillez reessayer !"
-            fichier = raw_input("Quel est le chemin d'acces au fichier a crypter ? > ")
+            fichier = raw_input("Quel est le chemin d'acces au fichier à chiffrer ? > ")
         mdp = getpass("Veuillez saisir le mot de passe a utiliser pour chiffer le document > ")
         while not mdp:
             print "Le mot de passe ne doit pas etre vide... Veuillez reessayer !"
-            mdp  = getpass("Veuillez saisir le mot de passe a utiliser pour chiffer le document > ")
+            mdp  = getpass("Veuillez saisir le mot de passe à utiliser pour chiffrer le document > ")
         return fichier, mdp
     else:
-        mdp = getpass("Veuillez saisir le mot de passe a utiliser pour chiffer le document > ")
+        mdp = getpass("Veuillez saisir le mot de passe à utiliser pour chiffrer le document > ")
         while not mdp:
-            print "Le mot de passe ne doit pas etre vide... Veuillez reessayer !"
-            mdp  = getpass("Veuillez saisir le mot de passe a utiliser pour chiffer le document > ")
+            print "Le mot de passe ne doit pas etre vide... Veuillez réessayer !"
+            mdp  = getpass("Veuillez saisir le mot de passe a utiliser pour chiffrer le document > ")
         return mdp
 
 

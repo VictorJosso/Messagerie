@@ -6,10 +6,10 @@ import hashlib
 import argparse
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Permet d'ajouter des utilisateurs a la messagerie.")
-    parser.add_argument("-u", "--username", help = "Specifie un nom d'utilisateur.")
-    parser.add_argument("-s", "--sha512", help = "Specifie le hash sha512 correspondant a l'utilisateur")
-    parser.add_argument("-e", "--email", help = "Specifie une adresse email.")
+    parser = argparse.ArgumentParser(description="Permet d'ajouter des utilisateurs à la messagerie.")
+    parser.add_argument("-u", "--username", help = "Spécifie un nom d'utilisateur.")
+    parser.add_argument("-s", "--sha512", help = "Spécifie le hash sha512 correspondant à l'utilisateur")
+    parser.add_argument("-e", "--email", help = "Spécifie une adresse email.")
     return  parser.parse_args()
 
 args = parse_arguments()
