@@ -138,7 +138,7 @@ def get_backup():
     elif msg_from_server.split("\\")[:3] == ["GIVE", "backup", "UNABLE"]:
         pass
     elif msg_from_server.split("\\") == "GET\\REFUSED":
-        print "Accès refuse. Veuillez reessayer !"
+        print "Accès refusé. Veuillez réessayer !"
         os.remove("log_infos.pkl")
         sys.exit()
 
@@ -170,11 +170,11 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
                 while True:
                     username = raw_input("Nom d'utilisateur : ")
                     while not username :
-                        print "Le nom d'utilisateur ne doit pas etre vide... Veuillez reessayer !"
+                        print "Le nom d'utilisateur ne doit pas etre vide... Veuillez réessayer !"
                         username = raw_input("Nom d'utilisateur : ")
                     passwd = getpass.getpass("Mot de passe : ")
                     while not passwd :
-                        print "Le mot de passe ne doit pas etre vide... Veuillez reessayer !"
+                        print "Le mot de passe ne doit pas etre vide... Veuillez réessayer !"
                         passwd = getpass.getpass("Mot de passe : ")
 
 
@@ -182,7 +182,7 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
                     connection_server.send(("CONNECT\\"+infos)) #Envoi des infos de connexion.
                     msg_from_server = attendre_reponse()
                     if msg_from_server.split("\\")[0] == 'CONNECT' and msg_from_server.split("\\")[1] == "OK":
-                        print 'Identification reussie !' #Le serveur a repondu positivement.
+                        print 'Identification réussie !' #Le serveur a repondu positivement.
                         f = open("log_infos.pkl", "w")
                         P = pickle.Pickler(f)
                         log_infos = {"user":username, "passwd":passwd, "hash":infos}
@@ -198,7 +198,7 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
                         break
                     else :
                         #Le serveur a refuse l'authentification.
-                        print "L'authentification a echouee... Veuillez reessayer."
+                        print "L'authentification à echouée... Veuillez réessayer."
             elif ans == "2":
                 register()
                 log_in()
@@ -207,17 +207,17 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
             U = pickle.Unpickler(f)
             datas = U.load()
             f.close()
-            print "Données de connection trouvees . Tentative de connection avec les donees de "+datas["user"]
+            print "Données de connection trouvées . Tentative de connection avec les données de "+datas["user"]
             log_in(already_in = True, user = datas["user"], passwd = datas["passwd"], hash_512 = datas["hash"])
     else:
         connection_server.send(("CONNECT\\"+hash_512))
         msg_from_server = attendre_reponse()
         if msg_from_server.split("\\")[0] == 'CONNECT' and msg_from_server.split("\\")[1] == "OK":
-            print "Identification reussie !"
+            print "Identification réussie !"
             username = user
             mdp = passwd
         else :
-            print "Les identifiants enregistres semblent etre incorrects. Merci de saisir vos identifiants ci dessous."
+            print "Les identifiants enregistrés semblent etre incorrects. Merci de saisir vos identifiants ci dessous."
             os.remove("log_infos.pkl")
             log_in()
 
@@ -284,13 +284,13 @@ def inbox(already_in = False):
             afficher_menu()
             return 0
         menu_text = ""
-        menu_text += "\n Veuillez entrer le numero de la conversation que vous souhaitez visualiser :\n[ 0 ] Retour au menu principal\n"
+        menu_text += "\n Veuillez entrer le numéro de la conversation que vous souhaitez visualiser :\n[ 0 ] Retour au menu principal\n"
         rep_available = ["0"]
         for x in range(len(convs)):
             menu_text += "[ "+str(x+1)+" ] "+ convs[x]+"\n"
             rep_available.append(str(x+1))
         menu_text += "\n"
-        rep = verif_answer(menu_text,rep_available, "Non pris en charge... Reessayer.")
+        rep = verif_answer(menu_text,rep_available, "Non pris en charge... Réessayer.")
         if rep == "0":
             afficher_menu()
             return 0
@@ -307,7 +307,7 @@ def inbox(already_in = False):
         else :
             print x.split("]")[0].split("\\")[1],":",x.split(']')[1]
     rep_available = ["r","m"]
-    rep = verif_answer("\nTaper r pour repondre, m pour retourner au menu precedent.", rep_available, "Valeur non pris en charge... Veuillez reessayer !")
+    rep = verif_answer("\nTaper r pour répondre, m pour retourner au menu précédent.", rep_available, "Valeur non prise en charge... Veuillez réessayer !")
     if rep == "r":
         envoyer_message(dest = sender)
         inbox(already_in = True)
@@ -317,8 +317,8 @@ def inbox(already_in = False):
 def afficher_menu():
     if server_reachable:
         rep_available = ["1","99", "2","99+"]
-        menu_text = "\nQue voulez-vous faire ?\n[1] Envoyer un message.\n[2] Acceder a ma boite de reception.\n[99] Quitter l'application.\n[99+] Vous deconnecter et quitter l'application.\n"
-        rep = verif_answer(menu_text, rep_available, "Non pris en charge... Reessayer.")
+        menu_text = "\nQue voulez-vous faire ?\n[1] Envoyer un message.\n[2] Accéder a ma boite de réception.\n[99] Quitter l'application.\n[99+] Vous déconnecter et quitter l'application.\n"
+        rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
         if rep == "1":
             envoyer_message()
         elif rep == "99" or rep == "99+":
@@ -339,10 +339,10 @@ def envoyer_message(dest = None):
         connection_server.send(("GET\\friends"))
         msg_from_server = attendre_reponse()
         if msg_from_server == "GET\\friends\\REFUSED":
-            print "Erreur lors de la recuperation de vos amis. Cela est probablement dut a une erreur dans votre connection. Solution proposee : redemarer l'application et se reconnecter."
+            print "Erreur lors de la récuperation de vos amis. Cela est probablement dut à une erreur dans votre connection. Solution proposee : rédemarer l'application et se reconnecter."
         else:
             menu_text = ""
-            menu_text += "\nVoici la liste de vos amis. Tapez leur numero pour leur envoyer un message.\n[ 0 ] Retour au menu principal\n"
+            menu_text += "\nVoici la liste de vos amis. Tapez leur numéro pour leur envoyer un message.\n[ 0 ] Retour au menu principal\n"
             rep_available = ["0", "G"]
             msg_from_server = msg_from_server.split(", ")
             for x in msg_from_server:
@@ -352,7 +352,7 @@ def envoyer_message(dest = None):
                 menu_text += "[ "+str(x+1)+" ] "+msg_from_server[x]+"\n"
                 rep_available.append(str(x+1))
             if len(rep_available) == 0 :
-                menu_text += "Si ta pas d'amis prends un curly ;)\n"
+                menu_text += "Si tu n'as pas d'amis, prend un curly ;)\n"
             menu_text += "[ + ] Ajouter un ami.\n"
             rep_available.append("+")
             if len(rep_available) > 1 :
@@ -360,9 +360,9 @@ def envoyer_message(dest = None):
                 rep_available.append("-")
             menu_text += "[ G ] Créer un nouveau groupe.\n"
             menu_text += "\n"
-            rep = verif_answer(menu_text, rep_available, "Non pris en charge... Reessayer.")
+            rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
             if rep == "+":
-                friend_to_add = raw_input("Quel est le nom d'utilisateur de votre nouvel ami ? \nLaisser vide pour retourner au menu precedent. \n>>")
+                friend_to_add = raw_input("Quel est le nom d'utilisateur de votre nouvel ami ? \nLaisser vide pour retourner au menu précédent. \n>>")
                 if not len(friend_to_add)==0:
                     connection_server.send(("ADD\\friend\\"+friend_to_add))
                     msg_from_server = attendre_reponse()
@@ -378,21 +378,21 @@ def envoyer_message(dest = None):
             elif rep == "-":
                 rep_available = []
                 menu_text = ""
-                menu_text += "Tapez le numero de l'ami qui n'en est plus un : \n[ 0 ] Retour en arriere\n"
+                menu_text += "Tapez le numéro de l'ami qui n'en est plus un : \n[ 0 ] Retour en arriere\n"
                 for x in range(len(msg_from_server)):
                     menu_text += "[ "+str(x+1)+" ] "+msg_from_server[x]+"\n"
                     rep_available.append(str(x+1))
                 rep_available.append("0")
-                rep = verif_answer(menu_text, rep_available, "Valeur non prise en charge... Reesayez !")
+                rep = verif_answer(menu_text, rep_available, "Valeur non prise en charge... Réessayez !")
                 if rep == "0":
                     envoyer_message()
                     return 0
                 connection_server.send(("REMOVE\\friend\\"+msg_from_server[int(rep)-1]))
                 msg_from_server = attendre_reponse()
                 if msg_from_server == "REMOVE\\friend\\OK":
-                    print "Ami supprime avec succes"
+                    print "Ami supprimé avec succès"
                 elif msg_from_server == "REMOVE\\friend\\404":
-                    print "Cet ami ne fait pas partie des votres !"
+                    print "Cet ami ne fait pas parti des votres !"
                 elif msg_from_server == "REMOVE\\friend\\REFUSED":
                     print "Acces refuse !"
             elif rep == "0":
@@ -406,7 +406,7 @@ def envoyer_message(dest = None):
                 else:
                     friends_to_add = []
                     while True:
-                        menu_text = "Entrez le numero de l'ami à ajouter au groupe.\n[ 0 ] Annuler la création du groupe et retourner au menu précédent.\n"
+                        menu_text = "Entrez le numéro de l'ami à ajouter au groupe.\n[ 0 ] Annuler la création du groupe et retourner au menu précédent.\n"
                         rep_available = ["0"]
                         if not len(friends_to_add) == 0:
                             menu_text += "[ - ] Retirer des amis déjà ajouté.\n"
@@ -464,16 +464,16 @@ def envoyer_message(dest = None):
                     connection_server.send("START\\s_conv\\"+msg_from_server[int(rep)-1]+"\\"+key)
                     msg_from_server = attendre_reponse()
                     if msg_from_server == "S_CONV\\CREATED":
-                        print "Les messages de cette conversation seront chiffres avec une cle unique."
+                        print "Les messages de cette conversation seront chiffrés avec une clé unique."
                     elif msg_from_server == "S_CONV\\REFUSED":
-                        print "ACCES REFUSE. Vous allez etre deconnecte."
+                        print "ACCES REFUSE. Vous allez etre déconnecte."
                         return 1
                 else :
                     destinataire = msg_from_server[int(rep)-1]
                     f = open(username+os.sep+"keys"+os.sep+destinataire+"key","r")
                     key = f.read()
                     f.close()
-                print "Tapez votre message ci dessous et appuyez sur entree pour l'envoyer.\nLaissez le champ vide pour retrourner en arriere."
+                print "Tapez votre message ci dessous et appuyez sur entrée pour l'envoyer.\nLaissez le champ vide pour retrourner en arriere."
                 message = raw_input(">>")
                 if not len(message) == 0:
                     msg_crypted = crpt.crypt_message(message, key)
@@ -481,7 +481,7 @@ def envoyer_message(dest = None):
                     msg_from_server = attendre_reponse()
                     if msg_from_server == "SEND\\OK":
                         prev_conv = ""
-                        print "Message envoye !\n\n"
+                        print "Message envoyé !\n\n"
                         try:
                             f = open(username+os.sep+"messages"+os.sep+destinataire,"r")
                             prev_conv = f.read()
@@ -499,13 +499,13 @@ def envoyer_message(dest = None):
                     return 0
 
                 else :
-                    print "Le message n'a pas ete remis.\n\n"
+                    print "Le message n'a pas été remis.\n\n"
         afficher_menu()
     else:
         f = open(username+os.sep+"keys"+os.sep+dest+"key","r")
         key = f.read()
         f.close()
-        print "Tapez votre message ci dessous et appuyez sur entree pour l'envoyer. Laissez le champ vide pour annuler et retourner à la conversation."
+        print "Tapez votre message ci dessous et appuyez sur entré pour l'envoyer. Laissez le champ vide pour annuler et retourner à la conversation."
         message = raw_input(">>")
         if not len(message) == 0:
             msg_crypted = crpt.crypt_message(message, key)
@@ -513,7 +513,7 @@ def envoyer_message(dest = None):
             msg_from_server = attendre_reponse()
             if msg_from_server == "SEND\\OK":
                 prev_conv = ""
-                print "Message envoye !\n\n"
+                print "Message envoyé !\n\n"
                 try:
                     f = open(username+os.sep+"messages"+os.sep+dest,"r")
                     prev_conv = f.read()
@@ -528,31 +528,31 @@ def envoyer_message(dest = None):
                     trier_conv(username+os.sep+"messages"+os.sep+dest)
 
             else :
-                print "Le message n'a pas ete remis.\n\n"
+                print "Le message n'a pas été remis.\n\n"
         else:
             return 0
 
 def register():
     username = raw_input("Nom d'utilisateur : ")
     while not username :
-        print "Le nom d'utilisateur ne doit pas etre vide... Veuillez reessayer !"
+        print "Le nom d'utilisateur ne doit pas etre vide... Veuillez réessayer !"
         username = raw_input("Nom d'utilisateur : ")
     passwd = ""
     passwd_conf = "a"
     while not passwd == passwd_conf:
         passwd = getpass.getpass("Mot de passe : ")
         while not passwd :
-            print "Le mot de passe ne doit pas etre vide... Veuillez reessayer !"
+            print "Le mot de passe ne doit pas etre vide... Veuillez réessayer !"
             passwd = getpass.getpass("Mot de passe : ")
         passwd_conf = getpass.getpass("Confirmation du mot de passe : ")
         while not passwd_conf :
-            print "Le mot de passe ne doit pas etre vide... Veuillez reessayer !"
+            print "Le mot de passe ne doit pas etre vide... Veuillez réessayer !"
             passwd_conf = getpass.getpass("Confirmation du mot de passe : ")
         if not passwd == passwd_conf:
-            print "Les mots de passe ne correspondent pas... Veuillez reessayer !"
+            print "Les mots de passe ne correspondent pas... Veuillez réessayer !"
     email = raw_input("Email : ")
     while not email:
-        print "L'email ne doit pas etre vide... Veuillez reesayer !"
+        print "L'email ne doit pas etre vide... Veuillez réessayer !"
         email = raw_input("Email : ")
     sha = hashlib.sha512((username+" : "+passwd).encode()).hexdigest()
     connection_server.send(("REGISTER\\"+"\\".join([username, sha, email])))
@@ -563,13 +563,13 @@ def register():
         print "Something went wrong... Please try again !"
         sys.exit()
     elif msg_recu == "REGISTER\\USERNAME_ALREADY_EXISTS":
-        print "Ce nom d'utilisateur est deja pris... Veuillez reessayer !"
+        print "Ce nom d'utilisateur est déja pris... Veuillez réessayer !"
         register()
     elif msg_recu == "REGISTER\\EMAIL_ALREADY_USED":
-        print "Cette adresse mail a deja ete utilisee... Veuillez reessayer !"
+        print "Cette adresse mail à deja été utilisée... Veuillez réessayer !"
         register()
 
-print "Connexion au server en cours...\r",
+print "Connexion au serveur en cours...\r",
 
 if __name__ == "__main__":
 
