@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Code par Victor Josso"""
 import pickle
 import os
@@ -11,6 +12,19 @@ def parse_arguments():
     parser.add_argument("-s", "--sha512", help = "Spécifie le hash sha512 correspondant à l'utilisateur")
     parser.add_argument("-e", "--email", help = "Spécifie une adresse email.")
     return  parser.parse_args()
+
+
+
+paths_to_add = ["clients", "clients/Backups", "clients/datas", "clients/convert-tables", "clients/Keys", "clients/groups", "clients/messages"]
+for path in paths_to_add:
+    try:
+        os.mkdir(path)
+    except:
+        pass
+
+os.system("touch clients/convert-tables/mails")
+os.system("touch clients/convert-tables/users_ids")
+os.system("touch clients/convert-tables/users")
 
 args = parse_arguments()
 username = args.username

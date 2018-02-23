@@ -17,6 +17,19 @@ def log(text):
     log.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"]"+text+"\n")
     log.close()
 
+def verif_path(path):
+    if not os.path.exists(path):
+        original_path = os.getcwd()
+        for x in path.split("/")[:len(path.split("/"))-1]:
+            try:
+                os.mkdir(x)
+            except OSError as error:
+            os.chdir(x)
+        os.chdir(original_path)
+        os.system("touch "+path)
+    else:
+        pass
+
 
 class Client:
     """
@@ -146,7 +159,9 @@ class Releve(threading.Thread):
                 except IOError:
                     self.client.send("CONNECT\\FAILED")
             elif self.msg_recu.split("\\")[0]=="REGISTER" and len(self.msg_recu.split("\\")) == 4:
-                self.users = open("clients/convert-tables/users",'r').read().split("\n")
+                verif_path("clients/convert-tables/users")
+                verif_path("clients/convert-tables/mails")
+                self.users = open(str("clients/convert-tables/users"),'r').read().split("\n")
                 self.mails = open("clients/convert-tables/mails",'r').read().split("\n")
                 if not self.msg_recu.split("\\")[1] in self.users:
                     if not self.msg_recu.split("\\")[3] in self.mails:
@@ -181,11 +196,13 @@ class Releve(threading.Thread):
                         elif len(self.msg_recu.split("\\"))==3:
                             self.conv_name = self.files[int(self.msg_recu.split("\\")[2])]
                             if os.path.exists("clients/Keys/"+self.client.username+"/"+self.conv_name+"key"):
+                                verif_path("clients/Keys/"+self.client.username+"/"+self.conv_name+"key")
                                 self.key = open("clients/Keys/"+self.client.username+"/"+self.conv_name+"key","r")
                                 self.client.send("KEY\\"+self.conv_name+"\\"+self.key.read())
                                 self.key.close()
                                 os.remove("clients/Keys/"+self.client.username+"/"+self.conv_name+"key")
                                 #time.sleep(1)
+                            verif_path("clients/messages/"+self.client.username+"/"+self.conv_name)
                             self.conv = open("clients/messages/"+self.client.username+"/"+self.conv_name, "r").read()
                             self.client.send("GIVE\\unreaded\\"+self.conv_name+"\\"+self.conv)
                             os.remove("clients/messages/"+self.client.username+"/"+self.conv_name)
@@ -209,6 +226,7 @@ class Releve(threading.Thread):
                         self.client.disconnect("Action non autorisee > "+self.msg_recu)
             elif self.msg_recu.split("\\")[0] == "SEND" and len(self.msg_recu.split("\\")) > 2:
                 if self.client.logged_in:
+                    verif_path("clients/messages/"+self.msg_recu.split("\\")[1]+"/"+self.client.username)
                     self.f = open("clients/messages/"+self.msg_recu.split("\\")[1]+"/"+self.client.username,"a")
                     self.f.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+self.client.username+"]"+self.msg_recu.split("\\")[2]+"\n")
                     self.f.close()
@@ -220,6 +238,7 @@ class Releve(threading.Thread):
             elif self.msg_recu.split("\\")[0] == "ADD" and len(self.msg_recu.split("\\")) > 1:
                 if self.msg_recu.split("\\")[1] == "friend" and len(self.msg_recu.split("\\")) > 2:
                     if self.client.logged_in:
+                        verif_path("clients/convert-tables/users")
                         self.users = open("clients/convert-tables/users",'r').read().split("\n")
                         if "\\".join(self.msg_recu.split("\\")[2:len(self.msg_recu.split("\\"))]) in self.users:
                             self.client.friends.append("\\".join(self.msg_recu.split("\\")[2:len(self.msg_recu.split("\\"))]))
@@ -263,6 +282,7 @@ class Releve(threading.Thread):
                     """self.f = open("clients/Backups/"+self.client.username+"/backup.zip","w")
                     self.f.write("\\".join(self.msg_recu.split("\\")[1:]))
                     self.f.close()"""
+                    verif_path("clients/Backups/"+self.client.username+"/backup.zip")
                     self.bkp_file = open("clients/Backups/"+self.client.username+"/backup.zip", 'wb')
                     self.bkp = binascii.unhexlify("\\".join(self.msg_recu.split("\\")[1:]))
                     self.bkp_file.write(self.bkp)
@@ -277,6 +297,7 @@ class Releve(threading.Thread):
                             os.mkdir("clients/Keys/"+self.msg_recu.split("\\")[2])
                         except:
                             pass
+                        verif_path("clients/Backups/"+self.client.username+"/backup.zip")
                         self.f = open("clients/Keys"+"/"+self.msg_recu.split("\\")[2]+"/"+self.client.username+"key","w")
                         self.f.write("\\".join(self.msg_recu.split("\\")[3:]))
                         self.f.close()
@@ -293,6 +314,7 @@ class Releve(threading.Thread):
                         self.lenth = self.msg_recu.split("\\")[4]
                         self.dests = self.msg_recu.split("\\")[5:]
                         for self.x in self.dests:
+                            verif_path("clients/groups/"+self.x+"/"+self.nom+".info")
                             self.fileinfo = open("clients/groups/"+self.x+"/"+self.nom+".info", "w")
                             self.fileinfo.write("Key="+self.key+"\nMembers="+", ".join(self.dests))
                             self.fileinfo.close()
@@ -311,7 +333,7 @@ class Releve(threading.Thread):
         print "Boucle finie dans le thread "+str(threading.currentThread())
 
 
-print "Demarrage du serveur."
+print "Demarrage du serveur.                                         "
 accepter_client = Accepter_client()
 accepter_client.start()
 clients = []

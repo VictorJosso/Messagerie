@@ -372,7 +372,7 @@ def envoyer_message(dest = None):
                         print "Cet ami n'existe pas !"
                     elif msg_from_server == "ADD\\friend\\REFUSED":
                         print "Acces refuse !"
-                elif len(friendpass_to_add) == 0:
+                elif len(friend_to_add) == 0:
                     envoyer_message()
                     return 0
             elif rep == "-":
