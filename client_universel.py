@@ -182,7 +182,7 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
                     connection_server.send(("CONNECT\\"+infos)) #Envoi des infos de connexion.
                     msg_from_server = attendre_reponse()
                     if msg_from_server.split("\\")[0] == 'CONNECT' and msg_from_server.split("\\")[1] == "OK":
-                        print 'Identification réussie !' #Le serveur a repondu positivement.
+                        print colours["green"]+'Identification réussie !'+colours["default"] #Le serveur a repondu positivement.
                         f = open("log_infos.pkl", "w")
                         P = pickle.Pickler(f)
                         log_infos = {"user":username, "passwd":passwd, "hash":infos}
@@ -198,7 +198,7 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
                         break
                     else :
                         #Le serveur a refuse l'authentification.
-                        print "L'authentification à echouée... Veuillez réessayer."
+                        print colours["red"]+"L'authentification à echouée... Veuillez réessayer."+colours["default"]
             elif ans == "2":
                 register()
                 log_in()
@@ -213,11 +213,11 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
         connection_server.send(("CONNECT\\"+hash_512))
         msg_from_server = attendre_reponse()
         if msg_from_server.split("\\")[0] == 'CONNECT' and msg_from_server.split("\\")[1] == "OK":
-            print "Identification réussie !"
+            print colours["green"]+"Identification réussie !"+colours["default"]
             username = user
             mdp = passwd
         else :
-            print "Les identifiants enregistrés semblent etre incorrects. Merci de saisir vos identifiants ci dessous."
+            print colours["red"]+"Les identifiants enregistrés semblent etre incorrects. Merci de saisir vos identifiants ci dessous."+colours["default"]
             os.remove("log_infos.pkl")
             log_in()
 
