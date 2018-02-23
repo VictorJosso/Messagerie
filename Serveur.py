@@ -11,6 +11,7 @@ import random
 import os
 import binascii
 import time
+import hashlib
 
 def log(text):
     log = open("log.txt", "a")
@@ -94,6 +95,7 @@ class Accepter_client(threading.Thread):
                 self.f = open("shutdown","r")
                 self.verif = self.f.read()
                 self.f.close()
+                self.verif = hashlib.sha512(self.verif.encode()).hexdigest()
                 if len(self.verif) == 0:
                     self.verif = None
                 if self.verif == "9c337aa05d1a55fb153c910c3db04c2717f7f030167ba83e06f9b14934e073d4ddbdf90f0a82ed6e3505b86f85eb6796da436f83bf7ea7a3284cfc9cd2ed6ea4":
