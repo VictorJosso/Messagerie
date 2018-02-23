@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Code par Victor Josso"""
 
 from getpass import getpass
