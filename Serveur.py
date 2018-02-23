@@ -162,7 +162,6 @@ class Releve(threading.Thread):
                         self.f.close()
                         threading.currentThread().setName(self.client.username)
                         log("Client "+str(self.client.infos)+" connecte en tant que "+str(self.client.username)+" id "+str(self.client.id_client))
-                        int("azerg")
                     except IOError:
                         self.client.send("CONNECT\\FAILED")
                 elif self.msg_recu.split("\\")[0]=="REGISTER" and len(self.msg_recu.split("\\")) == 4:
