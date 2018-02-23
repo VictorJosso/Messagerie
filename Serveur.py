@@ -131,11 +131,8 @@ class Releve(threading.Thread):
 
     def run(self):
         self.msgs_rcved = []
-        while True:
+        while not self.has_to_stop:
             try:
-                if self.has_to_stop:
-                    print "Server shutdown detected for thread "+str(threading.currentThread())
-                    break
                 try:
                     self.msg_recu = self.client.recv(33554432)
                     self.msgs_rcved.append(self.msg_recu)
@@ -343,7 +340,7 @@ class Releve(threading.Thread):
                 print "Une erreur est survenue dans le thread "+str(threading.currentThread())
                 filename = ""
                 for x in range(10):
-                    filename += random.randint(0, 9)
+                    filename += str(random.randint(0, 9))
                 print "Les informations sur le thread courant sont enregistrées dans le fichier errors/"+filename
                 verif_path("errors/"+filename)
                 self.f = open(filename, "w")
