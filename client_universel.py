@@ -303,7 +303,7 @@ def inbox(already_in = False):
         if x == "":
             continue
         if x.split("]")[0].split("\\")[1] == username:
-            print "Vous :", x.split("]")[1]
+            print "Vous "+" "* (len(x.split("]")[0].split("\\")[1])-3)+":", x.split("]")[1]
         else :
             print x.split("]")[0].split("\\")[1],":",x.split(']')[1]
     rep_available = ["r","m"]

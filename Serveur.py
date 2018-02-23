@@ -27,7 +27,7 @@ def verif_path(path):
                 pass
             os.chdir(x)
         os.chdir(original_path)
-        os.system("touch "+path)
+        os.mknod(path)
     else:
         pass
 
