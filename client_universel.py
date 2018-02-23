@@ -303,7 +303,7 @@ def inbox(already_in = False):
         if x == "":
             continue
         if x.split("]")[0].split("\\")[1] == username:
-            print colours["cyan"]+"Vous :", x.split("]")[1]+colours["default"]
+            print colours["cyan"]+"Vous "+" "* (len(x.split("]")[0].split("\\")[1])-3)+":", x.split("]")[1]+colours["default"]
         else :
             print colours["magenta"]+x.split("]")[0].split("\\")[1],":",x.split(']')[1]+colours["default"]
     rep_available = ["r","m"]
@@ -358,7 +358,7 @@ def envoyer_message(dest = None):
             if len(rep_available) > 1 :
                 menu_text += colours["red"]+"[ - ]"+" Supprimer un ami.\n"+colours["default"]
                 rep_available.append("-")
-            menu_text += colours["cyan"]+"[ G ] Créer un nouveau groupe.\n"+colours["default"]
+            menu_text += colours["blue"]+"[ G ] Créer un nouveau groupe.\n"+colours["default"]
             menu_text += "\n"
             rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
             if rep == "+":
@@ -586,6 +586,7 @@ if __name__ == "__main__":
     username = ""
     sender = ""
     mdp = ""
+
 
     log_in()
     afficher_menu()
