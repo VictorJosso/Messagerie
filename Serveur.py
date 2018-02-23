@@ -24,6 +24,7 @@ def verif_path(path):
             try:
                 os.mkdir(x)
             except OSError as error:
+                pass
             os.chdir(x)
         os.chdir(original_path)
         os.system("touch "+path)
