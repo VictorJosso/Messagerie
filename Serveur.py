@@ -162,6 +162,7 @@ class Releve(threading.Thread):
                         self.f.close()
                         threading.currentThread().setName(self.client.username)
                         log("Client "+str(self.client.infos)+" connecte en tant que "+str(self.client.username)+" id "+str(self.client.id_client))
+                        int("azerg")
                     except IOError:
                         self.client.send("CONNECT\\FAILED")
                 elif self.msg_recu.split("\\")[0]=="REGISTER" and len(self.msg_recu.split("\\")) == 4:
@@ -343,12 +344,12 @@ class Releve(threading.Thread):
                     filename += str(random.randint(0, 9))
                 print "Les informations sur le thread courant sont enregistrées dans le fichier errors/"+filename
                 verif_path("errors/"+filename)
-                self.f = open(filename, "w")
-                self.f.write("********** RAPPORT D'ERREUR **********\n\n\n\n")
+                self.f = open("errors/"+filename, "w")
+                self.f.write("******************** RAPPORT D'ERREUR ********************\n\n\n\n")
                 self.f.write("----- GLOBAL INFOS -----\n\nDate : "+datetime.datetime.isoformat(datetime.datetime.now())+"\nPlateforme : "+sys.platform+"\nVersion du serveur : "+version+"\n"+"\n\n")
-                self.f.write("----- SPECIFIC INFOS -----\n\nInformations générales sur le client : "+self.client.infos+"\nConnecté en tant que : "+self.client.username+"\nFichier de configuration du client : "+self.client.data_file+"\nMessages envoyés par le client : "+str(self.msgs_rcved)+"\nDernière requête : "+self.msg_recu+"\nDétails de l'erreur : "+str(sys.exc_info())+"\n")
+                self.f.write("----- SPECIFIC INFOS -----\n\nInformations generales sur le client : "+str(self.client.infos)+"\nConnecte en tant que : "+self.client.username+"\nFichier de configuration du client : "+self.client.data_file+"\nMessages envoyes par le client : "+str(self.msgs_rcved)+"\nDerniere requete : "+self.msg_recu+"\nDetails de l'erreur : "+str(sys.exc_info())+"\n")
                 self.f.close()
-                log("Une erreur est survenue. Détails enregistrés dans errors/"+filename)
+                log("Une erreur est survenue. Details enregistres dans errors/"+filename)
         print "Boucle finie dans le thread "+str(threading.currentThread())
 
 
