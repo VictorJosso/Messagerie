@@ -284,7 +284,7 @@ def inbox(already_in = False):
             afficher_menu()
             return 0
         menu_text = ""
-        menu_text += "\n Veuillez entrer le numéro de la conversation que vous souhaitez visualiser :\n[ 0 ] Retour au menu principal\n"
+        menu_text += "\n Veuillez entrer le numéro de la conversation que vous souhaitez visualiser :\n"+colours["yellow"]+"[ 0 ] Retour au menu principal\n"+colours["default"]
         rep_available = ["0"]
         for x in range(len(convs)):
             menu_text += "[ "+str(x+1)+" ] "+ convs[x]+"\n"
@@ -303,9 +303,9 @@ def inbox(already_in = False):
         if x == "":
             continue
         if x.split("]")[0].split("\\")[1] == username:
-            print "Vous :", x.split("]")[1]
+            print colours["cyan"]+"Vous :", x.split("]")[1]+colours["default"]
         else :
-            print x.split("]")[0].split("\\")[1],":",x.split(']')[1]
+            print colours["magenta"]+x.split("]")[0].split("\\")[1],":",x.split(']')[1]+colours["default"]
     rep_available = ["r","m"]
     rep = verif_answer("\nTaper r pour répondre, m pour retourner au menu précédent.", rep_available, "Valeur non prise en charge... Veuillez réessayer !")
     if rep == "r":
@@ -317,7 +317,7 @@ def inbox(already_in = False):
 def afficher_menu():
     if server_reachable:
         rep_available = ["1","99", "2","99+"]
-        menu_text = "\nQue voulez-vous faire ?\n[1] Envoyer un message.\n[2] Accéder a ma boite de réception.\n[99] Quitter l'application.\n[99+] Vous déconnecter et quitter l'application.\n"
+        menu_text = "\nQue voulez-vous faire ?\n[1] Envoyer un message.\n[2] Accéder a ma boite de réception.\n"+colours["magenta"]+"[99] Quitter l'application.\n"+colours["red"]+"[99+] Vous déconnecter et quitter l'application.\n"+colours["default"]
         rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
         if rep == "1":
             envoyer_message()
@@ -342,7 +342,7 @@ def envoyer_message(dest = None):
             print "Erreur lors de la récuperation de vos amis. Cela est probablement dut à une erreur dans votre connection. Solution proposee : rédemarer l'application et se reconnecter."
         else:
             menu_text = ""
-            menu_text += "\nVoici la liste de vos amis. Tapez leur numéro pour leur envoyer un message.\n[ 0 ] Retour au menu principal\n"
+            menu_text += "\nVoici la liste de vos amis. Tapez leur numéro pour leur envoyer un message.\n"+colours["yellow"]+"[ 0 ] Retour au menu principal\n"+colours["default"]
             rep_available = ["0", "G"]
             msg_from_server = msg_from_server.split(", ")
             for x in msg_from_server:
@@ -353,12 +353,12 @@ def envoyer_message(dest = None):
                 rep_available.append(str(x+1))
             if len(rep_available) == 0 :
                 menu_text += "Si tu n'as pas d'amis, prend un curly ;)\n"
-            menu_text += "[ + ] Ajouter un ami.\n"
+            menu_text += colours["green"]+"[ + ]"+" Ajouter un ami.\n"+colours["default"]
             rep_available.append("+")
             if len(rep_available) > 1 :
-                menu_text += "[ - ] Supprimer un ami.\n"
+                menu_text += colours["red"]+"[ - ]"+" Supprimer un ami.\n"+colours["default"]
                 rep_available.append("-")
-            menu_text += "[ G ] Créer un nouveau groupe.\n"
+            menu_text += colours["cyan"]+"[ G ] Créer un nouveau groupe.\n"+colours["default"]
             menu_text += "\n"
             rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
             if rep == "+":
@@ -378,7 +378,7 @@ def envoyer_message(dest = None):
             elif rep == "-":
                 rep_available = []
                 menu_text = ""
-                menu_text += "Tapez le numéro de l'ami qui n'en est plus un : \n[ 0 ] Retour en arriere\n"
+                menu_text += "Tapez le numéro de l'ami qui n'en est plus un : \n"+colours["yellow"]+"[ 0 ] Retour en arriere\n"+colours["default"]
                 for x in range(len(msg_from_server)):
                     menu_text += "[ "+str(x+1)+" ] "+msg_from_server[x]+"\n"
                     rep_available.append(str(x+1))
@@ -406,17 +406,17 @@ def envoyer_message(dest = None):
                 else:
                     friends_to_add = []
                     while True:
-                        menu_text = "Entrez le numéro de l'ami à ajouter au groupe.\n[ 0 ] Annuler la création du groupe et retourner au menu précédent.\n"
+                        menu_text = "Entrez le numéro de l'ami à ajouter au groupe.\n"+colours["yellow"]+"[ 0 ] Annuler la création du groupe et retourner au menu précédent.\n"+colours["default"]
                         rep_available = ["0"]
                         if not len(friends_to_add) == 0:
-                            menu_text += "[ - ] Retirer des amis déjà ajouté.\n"
+                            menu_text += colours["red"]+"[ - ] Retirer des amis déjà ajouté.\n"+colours["default"]
                             rep_available.append("-")
                         for x in range(len(msg_from_server)):
                             if not msg_from_server[x] in friends_to_add:
                                 menu_text += "[ "+str(x+1)+" ] "+msg_from_server[x]+"\n"
                                 rep_available.append(str(x+1))
                             else:
-                                menu_text += "[ + ] "+msg_from_server[x]+"\n"
+                                menu_text += colours["green"]+"[ + ] "+msg_from_server[x]+"\n"+colours["default"]
                         if len(friends_to_add)>1:
                             menu_text+="[ "+str(len(msg_from_server)+1)+ " ] Valider et créer le groupe.\n"
                             rep_available.append(str(len(msg_from_server)+1))
@@ -425,7 +425,7 @@ def envoyer_message(dest = None):
                             envoyer_message()
                             return 0
                         elif rep == "-":
-                            menu_text = "Entrez le numéro de l'ami qui ne doit pas être ajouté au groupe.\n[ 0 ] Annuler et retourner au menu précédent.\n"
+                            menu_text = "Entrez le numéro de l'ami qui ne doit pas être ajouté au groupe.\n"+colours["yellow"]+"[ 0 ] Annuler et retourner au menu précédent.\n"+colours["default"]
                             rep_available = ["0"]
                             for x in range(len(friends_to_add)):
                                 menu_text += "[ "+str(x+1)+" ] "+friends_to_add[x]+"\n"
