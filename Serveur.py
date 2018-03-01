@@ -13,6 +13,8 @@ import binascii
 import time
 import hashlib
 
+import addUser
+
 version  = "1.0"
 
 def log(text):
@@ -172,7 +174,7 @@ class Releve(threading.Thread):
                     if not self.msg_recu.split("\\")[1] in self.users:
                         if not self.msg_recu.split("\\")[3] in self.mails:
                             try:
-                                os.system("python add\ user.py -u "+self.msg_recu.split("\\")[1]+" -s "+self.msg_recu.split('\\')[2]+" -e "+self.msg_recu.split("\\")[3])
+                                addUser.createUser(self.msg_recu.split("\\")[1], self.msg_recu.split('\\')[3], self.msg_recu.split('\\')[2])
                                 self.client.send("REGISTER\\OK")
                             except:
                                 self.client.send("REGISTER\\ERROR")
