@@ -14,58 +14,64 @@ def parse_arguments():
     return  parser.parse_args()
 
 
+def createPath():
+    paths_to_add = ["clients", "clients/Backups", "clients/datas", "clients/convert-tables", "clients/Keys", "clients/groups", "clients/messages"]
+    for path in paths_to_add:
+        try:
+            os.mkdir(path)
+        except:
+            pass
 
-paths_to_add = ["clients", "clients/Backups", "clients/datas", "clients/convert-tables", "clients/Keys", "clients/groups", "clients/messages"]
-for path in paths_to_add:
+    os.system("touch clients/convert-tables/mails")
+    os.system("touch clients/convert-tables/users_ids")
+    os.system("touch clients/convert-tables/users")
+
+
+def createUser(username, email, filename):
+    createPath()
+    identifiant = str(len(os.listdir("clients/datas")) + 1)
+    while not len(identifiant) == 10:
+        identifiant = "0" + identifiant
+
+    filename = args.sha512
+
+    f = open("clients/datas/" + filename, 'w')
+    f.write("username = " + username + "\n")
+    f.write("email = " + email + "\n")
+    f.write("email_verified = False\n")
+    f.write("id = " + identifiant + "\n")
+    f.write("friends =  ")
+    f.close()
+
+    f = open("clients/convert-tables/users", "a+")
+    f.write(username + "\n")
+    f.close()
+
+    f = open("clients/convert-tables/mails", "a+")
+    f.write(email + "\n")
+    f.close()
+
+    os.mkdir("clients/messages/" + username)
+    os.mkdir("clients/Backups/" + username)
+    os.mkdir("clients/Keys/" + username)
+    os.mkdir("clients/groups/" + username)
+
+    f = open("clients/convert-tables/users_ids", "r")
+    u = pickle.Unpickler(f)
     try:
-        os.mkdir(path)
+        table = u.load()
     except:
-        pass
+        table = {}
+    f.close()
+    table[username] = identifiant
+    f = open("clients/convert-tables/users_ids", "w")
+    p = pickle.Pickler(f)
+    p.dump(table)
+    f.close()
 
-os.system("touch clients/convert-tables/mails")
-os.system("touch clients/convert-tables/users_ids")
-os.system("touch clients/convert-tables/users")
 
-args = parse_arguments()
-username = args.username
-identifiant = str(len(os.listdir("clients/datas"))+1)
-while not len(identifiant) == 10:
-    identifiant = "0"+identifiant
 
-mail = args.email
+if __name__ == "__main__":
+    args = parse_arguments()
 
-filename = args.sha512
-
-f = open("clients/datas/"+filename,'w')
-f.write("username = "+username+"\n")
-f.write("email = "+mail+"\n")
-f.write("email_verified = False\n")
-f.write("id = "+identifiant+"\n")
-f.write("friends =  ")
-f.close()
-
-f = open("clients/convert-tables/users", "a")
-f.write(username+"\n")
-f.close()
-
-f = open("clients/convert-tables/mails", "a")
-f.write(mail+"\n")
-f.close()
-
-os.mkdir("clients/messages/"+username)
-os.mkdir("clients/Backups/"+username)
-os.mkdir("clients/Keys/"+username)
-os.mkdir("clients/groups/"+username)
-
-f = open("clients/convert-tables/users_ids","r")
-u = pickle.Unpickler(f)
-try:
-    table = u.load()
-except:
-    table = {}
-f.close()
-table[username]=identifiant
-f = open("clients/convert-tables/users_ids","w")
-p = pickle.Pickler(f)
-p.dump(table)
-f.close()
+    createUser(args.username, args.email, args.sha512)
