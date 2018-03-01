@@ -19,21 +19,20 @@ def createPath():
     for path in paths_to_add:
         try:
             os.mkdir(path)
-        except:
+        except OSError:
+            # path already exist
             pass
-
-    os.system("touch clients/convert-tables/mails")
-    os.system("touch clients/convert-tables/users_ids")
-    os.system("touch clients/convert-tables/users")
+        except:
+            # something wrong append
+            e = sys.exc_info()[0] # get error
+            print("<p>Error: %s</p>" % e)
 
 
 def createUser(username, email, filename):
     createPath()
-    identifiant = str(len(os.listdir("clients/datas")) + 1)
-    while not len(identifiant) == 10:
-        identifiant = "0" + identifiant
 
-    filename = args.sha512
+    identifiant = str(len(os.listdir("clients/datas")) + 1)
+    identifiant = "{}{}".format('0' * (10 - len(identifiant)), identifiant)
 
     f = open("clients/datas/" + filename, 'w')
     f.write("username = " + username + "\n")
@@ -56,6 +55,15 @@ def createUser(username, email, filename):
     os.mkdir("clients/Keys/" + username)
     os.mkdir("clients/groups/" + username)
 
+    try:
+        os.mknod("clients/convert-tables/users_ids")
+    except OSError:
+        # file already exist
+        pass
+    except:
+        # something wrong append
+        e = sys.exc_info()[0] # get error
+        print("<p>Error: %s</p>" % e)
     f = open("clients/convert-tables/users_ids", "r")
     u = pickle.Unpickler(f)
     try:
