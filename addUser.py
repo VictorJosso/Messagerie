@@ -25,7 +25,7 @@ def createPath():
         except:
             # something wrong append
             e = sys.exc_info()[0] # get error
-            print("<p>Error: %s</p>" % e)
+            print("Error: {}".format(e))
 
 
 def createUser(username, email, filename):
@@ -63,7 +63,7 @@ def createUser(username, email, filename):
     except:
         # something wrong append
         e = sys.exc_info()[0] # get error
-        print("Error: {}</p>".format(e))
+        print("Error: {}".format(e))
     f = open("clients/convert-tables/users_ids", "r")
     u = pickle.Unpickler(f)
     try:
