@@ -353,7 +353,7 @@ def inbox(already_in = False):
 def afficher_menu():
     if server_reachable:
         rep_available = ["1","99", "2","99+"]
-        menu_text = "\nQue voulez-vous faire ?\n[1] Envoyer un message.\n[2] Accéder a ma boite de réception.\n"+colours["magenta"]+"[99] Quitter l'application.\n"+colours["red"]+"[99+] Vous déconnecter et quitter l'application.\n"+colours["default"]
+        menu_text = "\nQue voulez-vous faire ?\n[1] Envoyer un message.\n[2] Accéder a ma boite de réception.\n"+"[99] Quitter l'application.\n"+colours["default"]+colours["red"]+colours["reverse"]+"[99+] Vous déconnecter et quitter l'application.\n"+colours["default"]
         rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
         if rep == "1":
             envoyer_message()

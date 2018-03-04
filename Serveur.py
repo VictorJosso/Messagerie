@@ -17,10 +17,10 @@ import argparse
 version  = "1.0"
 
 def parse_arguments():
-	parser = argparse.ArgumentParser(description="Serveur pour la messagerie, par Victor Josso")
-	parser.add_argument("-p", "--port", help="Définissez le port sur lequel écouter (default : "+str(port)+")")
+    parser = argparse.ArgumentParser(description="Serveur pour la messagerie, par Victor Josso")
+    parser.add_argument("-p", "--port", help="Définissez le port sur lequel écouter (default : "+str(port)+")")
 
-	return parser.parse_args()
+    return parser.parse_args()
 
 def log(text):
     log = open("log.txt", "a")
@@ -90,7 +90,7 @@ if args.port:
     except:
         print "Le port sur lequel écouter doit être un nombre entier compris entre 1 et 65535"
         sys.exit()
-        
+
 
 
 connection_principale = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -365,7 +365,7 @@ class Releve(threading.Thread):
                 verif_path("errors/"+filename)
                 self.f = open("errors/"+filename, "w")
                 self.f.write("******************** RAPPORT D'ERREUR ********************\n\n\n\n")
-                self.f.write("----- GLOBAL INFOS -----\n\nDate : "+datetime.datetime.isoformat(datetime.datetime.now())+"\nPlateforme : "+sys.platform+"\nVersion du serveur : "+version+"\n"+"\n\n")
+                self.f.write("----- GLOBAL INFOS -----\n\nDate : "+", ".join(datetime.datetime.isoformat(datetime.datetime.now()).split("T"))+"\nPlateforme : "+sys.platform+"\nVersion du serveur : "+version+"\n"+"\n\n")
                 self.f.write("----- SPECIFIC INFOS -----\n\nInformations generales sur le client : "+str(self.client.infos)+"\nConnecte en tant que : "+self.client.username+"\nFichier de configuration du client : "+self.client.data_file+"\nMessages envoyes par le client : "+str(self.msgs_rcved)+"\nDerniere requete : "+self.msg_recu+"\nDetails de l'erreur : "+str(sys.exc_info())+"\n")
                 self.f.close()
                 log("Une erreur est survenue. Details enregistres dans errors/"+filename)
