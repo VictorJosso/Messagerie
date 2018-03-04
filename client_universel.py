@@ -339,11 +339,7 @@ def inbox(already_in = False):
         if x == "":
             continue
         if x.split("]")[0].split("\\")[1] == username:
-<<<<<<< HEAD
-            print "Vous "+" "* (len(x.split("]")[0].split("\\")[1])-3)+":", x.split("]")[1]
-=======
             print colours["cyan"]+"Vous "+" "* (len(x.split("]")[0].split("\\")[1])-3)+":", x.split("]")[1]+colours["default"]
->>>>>>> linux
         else :
             print colours["magenta"]+x.split("]")[0].split("\\")[1],":",x.split(']')[1]+colours["default"]
     rep_available = ["r","m"]
