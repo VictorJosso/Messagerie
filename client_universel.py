@@ -16,6 +16,7 @@ import zipfile
 import glob
 import shutil
 import binascii
+import argparse
 
 import Crypt as crpt
 import Uncrypt as ucrpt
@@ -78,6 +79,13 @@ else:
 		"on_magenta" :    "",
 		"on_cyan"    :    "",
 		"on_white"   :    "" }
+
+def parse_arguments():
+	parser = argparse.ArgumentParser(description="Client pour la messagerie, par Victor Josso")
+	parser.add_argument("--hote", help="Définissez l'hote auquel se connecter (default : "+str(hote)+")")
+	parser.add_argument("-p", "--port", help="Définissez le port auquel se connecter (default : "+str(port)+")")
+
+	return parser.parse_args()
 
 class Releve(threading.Thread):
     def __init__(self):
@@ -210,7 +218,7 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
                     connection_server.send(("CONNECT\\"+infos)) #Envoi des infos de connexion.
                     msg_from_server = attendre_reponse()
                     if msg_from_server.split("\\")[0] == 'CONNECT' and msg_from_server.split("\\")[1] == "OK":
-                        print colours["green"]+'Identification réussie !'+colours["default"] #Le serveur a repondu positivement.
+                        print colours["green"]+colours["reverse"]+colours["bold"]+'Identification réussie !'+colours["default"] #Le serveur a repondu positivement.
                         f = open("log_infos.pkl", "w")
                         P = pickle.Pickler(f)
                         log_infos = {"user":username, "passwd":passwd, "hash":infos}
@@ -226,7 +234,7 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
                         break
                     else :
                         #Le serveur a refuse l'authentification.
-                        print colours["red"]+"L'authentification à echouée... Veuillez réessayer."+colours["default"]
+                        print colours["red"]+colours["reverse"]+colours["bold"]+"L'authentification à echouée... Veuillez réessayer."+colours["default"]
             elif ans == "2":
                 register()
                 log_in()
@@ -241,11 +249,11 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
         connection_server.send(("CONNECT\\"+hash_512))
         msg_from_server = attendre_reponse()
         if msg_from_server.split("\\")[0] == 'CONNECT' and msg_from_server.split("\\")[1] == "OK":
-            print colours["green"]+"Identification réussie !"+colours["default"]
+            print colours["green"]+colours["reverse"]+colours["bold"]+"Identification réussie !"+colours["default"]
             username = user
             mdp = passwd
         else :
-            print colours["red"]+"Les identifiants enregistrés semblent etre incorrects. Merci de saisir vos identifiants ci dessous."+colours["default"]
+            print colours["red"]+colours["reverse"]+colours["bold"]+"Les identifiants enregistrés semblent etre incorrects. Merci de saisir vos identifiants ci dessous."+colours["default"]
             os.remove("log_infos.pkl")
             log_in()
 
@@ -312,7 +320,7 @@ def inbox(already_in = False):
             afficher_menu()
             return 0
         menu_text = ""
-        menu_text += "\n Veuillez entrer le numéro de la conversation que vous souhaitez visualiser :\n"+colours["yellow"]+"[ 0 ] Retour au menu principal\n"+colours["default"]
+        menu_text += "\n Veuillez entrer le numéro de la conversation que vous souhaitez visualiser :\n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Retour au menu principal\n"+colours["default"]
         rep_available = ["0"]
         for x in range(len(convs)):
             menu_text += "[ "+str(x+1)+" ] "+ convs[x]+"\n"
@@ -370,7 +378,7 @@ def envoyer_message(dest = None):
             print "Erreur lors de la récuperation de vos amis. Cela est probablement dut à une erreur dans votre connection. Solution proposee : rédemarer l'application et se reconnecter."
         else:
             menu_text = ""
-            menu_text += "\nVoici la liste de vos amis. Tapez leur numéro pour leur envoyer un message.\n"+colours["yellow"]+"[ 0 ] Retour au menu principal\n"+colours["default"]
+            menu_text += "\nVoici la liste de vos amis. Tapez leur numéro pour leur envoyer un message.\n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Retour au menu principal\n"+colours["default"]
             rep_available = ["0", "G"]
             msg_from_server = msg_from_server.split(", ")
             for x in msg_from_server:
@@ -406,7 +414,7 @@ def envoyer_message(dest = None):
             elif rep == "-":
                 rep_available = []
                 menu_text = ""
-                menu_text += "Tapez le numéro de l'ami qui n'en est plus un : \n"+colours["yellow"]+"[ 0 ] Retour en arriere\n"+colours["default"]
+                menu_text += "Tapez le numéro de l'ami qui n'en est plus un : \n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Retour en arriere\n"+colours["default"]
                 for x in range(len(msg_from_server)):
                     menu_text += "[ "+str(x+1)+" ] "+msg_from_server[x]+"\n"
                     rep_available.append(str(x+1))
@@ -434,7 +442,7 @@ def envoyer_message(dest = None):
                 else:
                     friends_to_add = []
                     while True:
-                        menu_text = "Entrez le numéro de l'ami à ajouter au groupe.\n"+colours["yellow"]+"[ 0 ] Annuler la création du groupe et retourner au menu précédent.\n"+colours["default"]
+                        menu_text = "Entrez le numéro de l'ami à ajouter au groupe.\n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Annuler la création du groupe et retourner au menu précédent.\n"+colours["default"]
                         rep_available = ["0"]
                         if not len(friends_to_add) == 0:
                             menu_text += colours["red"]+"[ - ] Retirer des amis déjà ajouté.\n"+colours["default"]
@@ -453,7 +461,7 @@ def envoyer_message(dest = None):
                             envoyer_message()
                             return 0
                         elif rep == "-":
-                            menu_text = "Entrez le numéro de l'ami qui ne doit pas être ajouté au groupe.\n"+colours["yellow"]+"[ 0 ] Annuler et retourner au menu précédent.\n"+colours["default"]
+                            menu_text = "Entrez le numéro de l'ami qui ne doit pas être ajouté au groupe.\n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Annuler et retourner au menu précédent.\n"+colours["default"]
                             rep_available = ["0"]
                             for x in range(len(friends_to_add)):
                                 menu_text += "[ "+str(x+1)+" ] "+friends_to_add[x]+"\n"
@@ -600,21 +608,31 @@ def register():
 print "Connexion au serveur en cours...\r",
 
 if __name__ == "__main__":
+	args = parse_arguments()
+	if args.hote:
+		hote = args.hote
+	if args.port:
+		try:
+			port = int(args.port)
+			if not (port >= 1 and port <= 65535):
+				raise ValueError
+		except:
+			print "Le port auquel se connecter doit être un nombre entier compris entre 1 et 65535"
+			sys.exit()
+	mainthread = threading.currentThread()
+	server_reachable = True
+	connection_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	connection_server.connect((hote, port))
 
-    mainthread = threading.currentThread()
-    server_reachable = True
-    connection_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    connection_server.connect((hote, port))
+	verrou = threading.RLock()
 
-    verrou = threading.RLock()
+	releve = Releve()
+	releve.start()
 
-    releve = Releve()
-    releve.start()
-
-    username = ""
-    sender = ""
-    mdp = ""
+	username = ""
+	sender = ""
+	mdp = ""
 
 
-    log_in()
-    afficher_menu()
+	log_in()
+	afficher_menu()

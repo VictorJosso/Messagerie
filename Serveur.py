@@ -12,8 +12,15 @@ import os
 import binascii
 import time
 import hashlib
+import argparse
 
 version  = "1.0"
+
+def parse_arguments():
+	parser = argparse.ArgumentParser(description="Serveur pour la messagerie, par Victor Josso")
+	parser.add_argument("-p", "--port", help="Définissez le port sur lequel écouter (default : "+str(port)+")")
+
+	return parser.parse_args()
 
 def log(text):
     log = open("log.txt", "a")
@@ -72,6 +79,19 @@ class Client:
 
 hote = ""
 port = 26281
+
+args = parse_arguments()
+
+if args.port:
+    try:
+        port = int(args.port)
+        if not (port >= 1 and port <= 65535):
+            raise ValueError
+    except:
+        print "Le port sur lequel écouter doit être un nombre entier compris entre 1 et 65535"
+        sys.exit()
+        
+
 
 connection_principale = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 connection_principale.bind((hote, port))
