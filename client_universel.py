@@ -16,6 +16,7 @@ import zipfile
 import glob
 import shutil
 import binascii
+import argparse
 
 import Crypt as crpt
 import Uncrypt as ucrpt
@@ -24,32 +25,67 @@ import generate_random_passwords as r_pass
 hote = "127.0.0.1"
 port = 26281
 
-colours = {
-	"default"    :    "\033[0m",
-	# style
-	"bold"       :    "\033[1m",
-	"underline"  :    "\033[4m",
-	"blink"      :    "\033[5m",
-	"reverse"    :    "\033[7m",
-	"concealed"  :    "\033[8m",
-	# couleur texte
-	"black"      :    "\033[30m",
-	"red"        :    "\033[31m",
-	"green"      :    "\033[32m",
-	"yellow"     :    "\033[33m",
-	"blue"       :    "\033[34m",
-	"magenta"    :    "\033[35m",
-	"cyan"       :    "\033[36m",
-	"white"      :    "\033[37m",
-	# couleur fond
-	"on_black"   :    "\033[40m",
-	"on_red"     :    "\033[41m",
-	"on_green"   :    "\033[42m",
-	"on_yellow"  :    "\033[43m",
-	"on_blue"    :    "\033[44m",
-	"on_magenta" :    "\033[45m",
-	"on_cyan"    :    "\033[46m",
-	"on_white"   :    "\033[47m" }
+if  not sys.platform[:3] == "win":
+	colours = {
+		"default"    :    "\033[0m",
+		# style
+		"bold"       :    "\033[1m",
+		"underline"  :    "\033[4m",
+		"blink"      :    "\033[5m",
+		"reverse"    :    "\033[7m",
+		"concealed"  :    "\033[8m",
+		# couleur texte
+		"black"      :    "\033[30m",
+		"red"        :    "\033[31m",
+		"green"      :    "\033[32m",
+		"yellow"     :    "\033[33m",
+		"blue"       :    "\033[34m",
+		"magenta"    :    "\033[35m",
+		"cyan"       :    "\033[36m",
+		"white"      :    "\033[37m",
+		# couleur fond
+		"on_black"   :    "\033[40m",
+		"on_red"     :    "\033[41m",
+		"on_green"   :    "\033[42m",
+		"on_yellow"  :    "\033[43m",
+		"on_blue"    :    "\033[44m",
+		"on_magenta" :    "\033[45m",
+		"on_cyan"    :    "\033[46m",
+		"on_white"   :    "\033[47m" }
+else:
+	colours = {
+		"default"    :    "",
+		# style
+		"bold"       :    "",
+		"underline"  :    "",
+		"blink"      :    "",
+		"reverse"    :    "",
+		"concealed"  :    "",
+		# couleur texte
+		"black"      :    "",
+		"red"        :    "",
+		"green"      :    "",
+		"yellow"     :    "",
+		"blue"       :    "",
+		"magenta"    :    "",
+		"cyan"       :    "",
+		"white"      :    "",
+		# couleur fond
+		"on_black"   :    "",
+		"on_red"     :    "",
+		"on_green"   :    "",
+		"on_yellow"  :    "",
+		"on_blue"    :    "",
+		"on_magenta" :    "",
+		"on_cyan"    :    "",
+		"on_white"   :    "" }
+
+def parse_arguments():
+	parser = argparse.ArgumentParser(description="Client pour la messagerie, par Victor Josso")
+	parser.add_argument("--hote", help="Définissez l'hote auquel se connecter (default : "+str(hote)+")")
+	parser.add_argument("-p", "--port", help="Définissez le port auquel se connecter (default : "+str(port)+")")
+
+	return parser.parse_args()
 
 class Releve(threading.Thread):
     def __init__(self):
@@ -182,7 +218,7 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
                     connection_server.send(("CONNECT\\"+infos)) #Envoi des infos de connexion.
                     msg_from_server = attendre_reponse()
                     if msg_from_server.split("\\")[0] == 'CONNECT' and msg_from_server.split("\\")[1] == "OK":
-                        print 'Identification réussie !' #Le serveur a repondu positivement.
+                        print colours["green"]+colours["reverse"]+colours["bold"]+'Identification réussie !'+colours["default"] #Le serveur a repondu positivement.
                         f = open("log_infos.pkl", "w")
                         P = pickle.Pickler(f)
                         log_infos = {"user":username, "passwd":passwd, "hash":infos}
@@ -198,7 +234,7 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
                         break
                     else :
                         #Le serveur a refuse l'authentification.
-                        print "L'authentification à echouée... Veuillez réessayer."
+                        print colours["red"]+colours["reverse"]+colours["bold"]+"L'authentification à echouée... Veuillez réessayer."+colours["default"]
             elif ans == "2":
                 register()
                 log_in()
@@ -213,11 +249,11 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
         connection_server.send(("CONNECT\\"+hash_512))
         msg_from_server = attendre_reponse()
         if msg_from_server.split("\\")[0] == 'CONNECT' and msg_from_server.split("\\")[1] == "OK":
-            print "Identification réussie !"
+            print colours["green"]+colours["reverse"]+colours["bold"]+"Identification réussie !"+colours["default"]
             username = user
             mdp = passwd
         else :
-            print "Les identifiants enregistrés semblent etre incorrects. Merci de saisir vos identifiants ci dessous."
+            print colours["red"]+colours["reverse"]+colours["bold"]+"Les identifiants enregistrés semblent etre incorrects. Merci de saisir vos identifiants ci dessous."+colours["default"]
             os.remove("log_infos.pkl")
             log_in()
 
@@ -284,7 +320,7 @@ def inbox(already_in = False):
             afficher_menu()
             return 0
         menu_text = ""
-        menu_text += "\n Veuillez entrer le numéro de la conversation que vous souhaitez visualiser :\n[ 0 ] Retour au menu principal\n"
+        menu_text += "\n Veuillez entrer le numéro de la conversation que vous souhaitez visualiser :\n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Retour au menu principal\n"+colours["default"]
         rep_available = ["0"]
         for x in range(len(convs)):
             menu_text += "[ "+str(x+1)+" ] "+ convs[x]+"\n"
@@ -303,9 +339,13 @@ def inbox(already_in = False):
         if x == "":
             continue
         if x.split("]")[0].split("\\")[1] == username:
+<<<<<<< HEAD
             print "Vous "+" "* (len(x.split("]")[0].split("\\")[1])-3)+":", x.split("]")[1]
+=======
+            print colours["cyan"]+"Vous "+" "* (len(x.split("]")[0].split("\\")[1])-3)+":", x.split("]")[1]+colours["default"]
+>>>>>>> linux
         else :
-            print x.split("]")[0].split("\\")[1],":",x.split(']')[1]
+            print colours["magenta"]+x.split("]")[0].split("\\")[1],":",x.split(']')[1]+colours["default"]
     rep_available = ["r","m"]
     rep = verif_answer("\nTaper r pour répondre, m pour retourner au menu précédent.", rep_available, "Valeur non prise en charge... Veuillez réessayer !")
     if rep == "r":
@@ -317,7 +357,7 @@ def inbox(already_in = False):
 def afficher_menu():
     if server_reachable:
         rep_available = ["1","99", "2","99+"]
-        menu_text = "\nQue voulez-vous faire ?\n[1] Envoyer un message.\n[2] Accéder a ma boite de réception.\n[99] Quitter l'application.\n[99+] Vous déconnecter et quitter l'application.\n"
+        menu_text = "\nQue voulez-vous faire ?\n[1] Envoyer un message.\n[2] Accéder a ma boite de réception.\n"+colours["magenta"]+"[99] Quitter l'application.\n"+colours["red"]+"[99+] Vous déconnecter et quitter l'application.\n"+colours["default"]
         rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
         if rep == "1":
             envoyer_message()
@@ -342,7 +382,7 @@ def envoyer_message(dest = None):
             print "Erreur lors de la récuperation de vos amis. Cela est probablement dut à une erreur dans votre connection. Solution proposee : rédemarer l'application et se reconnecter."
         else:
             menu_text = ""
-            menu_text += "\nVoici la liste de vos amis. Tapez leur numéro pour leur envoyer un message.\n[ 0 ] Retour au menu principal\n"
+            menu_text += "\nVoici la liste de vos amis. Tapez leur numéro pour leur envoyer un message.\n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Retour au menu principal\n"+colours["default"]
             rep_available = ["0", "G"]
             msg_from_server = msg_from_server.split(", ")
             for x in msg_from_server:
@@ -353,12 +393,12 @@ def envoyer_message(dest = None):
                 rep_available.append(str(x+1))
             if len(rep_available) == 0 :
                 menu_text += "Si tu n'as pas d'amis, prend un curly ;)\n"
-            menu_text += "[ + ] Ajouter un ami.\n"
+            menu_text += colours["green"]+"[ + ]"+" Ajouter un ami.\n"+colours["default"]
             rep_available.append("+")
             if len(rep_available) > 1 :
-                menu_text += "[ - ] Supprimer un ami.\n"
+                menu_text += colours["red"]+"[ - ]"+" Supprimer un ami.\n"+colours["default"]
                 rep_available.append("-")
-            menu_text += "[ G ] Créer un nouveau groupe.\n"
+            menu_text += colours["blue"]+"[ G ] Créer un nouveau groupe.\n"+colours["default"]
             menu_text += "\n"
             rep = verif_answer(menu_text, rep_available, "Non pris en charge... Réessayer.")
             if rep == "+":
@@ -378,7 +418,7 @@ def envoyer_message(dest = None):
             elif rep == "-":
                 rep_available = []
                 menu_text = ""
-                menu_text += "Tapez le numéro de l'ami qui n'en est plus un : \n[ 0 ] Retour en arriere\n"
+                menu_text += "Tapez le numéro de l'ami qui n'en est plus un : \n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Retour en arriere\n"+colours["default"]
                 for x in range(len(msg_from_server)):
                     menu_text += "[ "+str(x+1)+" ] "+msg_from_server[x]+"\n"
                     rep_available.append(str(x+1))
@@ -406,17 +446,17 @@ def envoyer_message(dest = None):
                 else:
                     friends_to_add = []
                     while True:
-                        menu_text = "Entrez le numéro de l'ami à ajouter au groupe.\n[ 0 ] Annuler la création du groupe et retourner au menu précédent.\n"
+                        menu_text = "Entrez le numéro de l'ami à ajouter au groupe.\n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Annuler la création du groupe et retourner au menu précédent.\n"+colours["default"]
                         rep_available = ["0"]
                         if not len(friends_to_add) == 0:
-                            menu_text += "[ - ] Retirer des amis déjà ajouté.\n"
+                            menu_text += colours["red"]+"[ - ] Retirer des amis déjà ajouté.\n"+colours["default"]
                             rep_available.append("-")
                         for x in range(len(msg_from_server)):
                             if not msg_from_server[x] in friends_to_add:
                                 menu_text += "[ "+str(x+1)+" ] "+msg_from_server[x]+"\n"
                                 rep_available.append(str(x+1))
                             else:
-                                menu_text += "[ + ] "+msg_from_server[x]+"\n"
+                                menu_text += colours["green"]+"[ + ] "+msg_from_server[x]+"\n"+colours["default"]
                         if len(friends_to_add)>1:
                             menu_text+="[ "+str(len(msg_from_server)+1)+ " ] Valider et créer le groupe.\n"
                             rep_available.append(str(len(msg_from_server)+1))
@@ -425,7 +465,7 @@ def envoyer_message(dest = None):
                             envoyer_message()
                             return 0
                         elif rep == "-":
-                            menu_text = "Entrez le numéro de l'ami qui ne doit pas être ajouté au groupe.\n[ 0 ] Annuler et retourner au menu précédent.\n"
+                            menu_text = "Entrez le numéro de l'ami qui ne doit pas être ajouté au groupe.\n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Annuler et retourner au menu précédent.\n"+colours["default"]
                             rep_available = ["0"]
                             for x in range(len(friends_to_add)):
                                 menu_text += "[ "+str(x+1)+" ] "+friends_to_add[x]+"\n"
@@ -572,20 +612,31 @@ def register():
 print "Connexion au serveur en cours...\r",
 
 if __name__ == "__main__":
+	args = parse_arguments()
+	if args.hote:
+		hote = args.hote
+	if args.port:
+		try:
+			port = int(args.port)
+			if not (port >= 1 and port <= 65535):
+				raise ValueError
+		except:
+			print "Le port auquel se connecter doit être un nombre entier compris entre 1 et 65535"
+			sys.exit()
+	mainthread = threading.currentThread()
+	server_reachable = True
+	connection_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	connection_server.connect((hote, port))
 
-    mainthread = threading.currentThread()
-    server_reachable = True
-    connection_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    connection_server.connect((hote, port))
+	verrou = threading.RLock()
 
-    verrou = threading.RLock()
+	releve = Releve()
+	releve.start()
 
-    releve = Releve()
-    releve.start()
+	username = ""
+	sender = ""
+	mdp = ""
 
-    username = ""
-    sender = ""
-    mdp = ""
 
-    log_in()
-    afficher_menu()
+	log_in()
+	afficher_menu()
