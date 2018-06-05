@@ -11,5 +11,5 @@ def generate(lenth):
         if not rang == 92:
             pwd+=chr(rang)
         else:
-            pass
+            pwd+=generate(1)
     return pwd

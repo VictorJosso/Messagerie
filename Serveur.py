@@ -13,8 +13,10 @@ import binascii
 import time
 import hashlib
 import argparse
+import pickle
 
 import addUser
+import Crypt as crpt
 
 version  = "1.0"
 
@@ -29,19 +31,29 @@ def log(text):
     log.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"]"+text+"\n")
     log.close()
 
-def verif_path(path):
-    if not os.path.exists(path):
-        original_path = os.getcwd()
-        for x in path.split("/")[:len(path.split("/"))-1]:
-            try:
-                os.mkdir(x)
-            except OSError as error:
-                pass
-            os.chdir(x)
-        os.chdir(original_path)
-        os.mknod(path)
-    else:
-        pass
+def verif_path(path, folder = False):
+	if folder:
+		path+=os.sep+"creating_file"
+	if not os.path.exists(path):
+		original_path = os.getcwd()
+		for x in path.split(os.sep)[:len(path.split(os.sep))-1]:
+			try:
+				os.mkdir(x)
+			except Exception as error:
+				pass
+			os.chdir(x)
+		os.chdir(original_path)
+		if not folder:
+			a = open(path, "w")
+			a.close()
+	else:
+		pass
+
+def find_key_in_dict(dict, phrase):
+	for cle, val in dict.items():
+		if val == phrase:
+			return cle
+	return None
 
 
 class Client:
@@ -60,12 +72,29 @@ class Client:
         self.forcedisconnected = False
         self.releve = ""
         self.data_file = None
+        self.groupsids = {}
+        self.private_key = ""
+
+    def get_groupsids(self):
+        verif_path(os.sep.join(self.data_file.split("/"))+"-datas"+os.sep+"groups_allowed.pkl")
+        self.groupsids_f = open(self.data_file+"-datas/groups_allowed.pkl", "r")
+        try:
+            self.groupsids = pickle.Unpickler(self.groupsids_f).load()
+        except:
+            self.groupsids = {}
+        self.groupsids_f.close()
+
+    def update_groupsids(self):
+        self.groupsids_f = open(self.data_file+"-datas/groups_allowed.pkl", "w")
+        self.pklgroupsids = pickle.Pickler(self.groupsids_f)
+        self.pklgroupsids.dump(self.groupsids)
+        self.groupsids_f.close()
 
     def send(self,message):
         """
         Envoie un message au client.
         """
-        self.connection.send(message)
+        self.connection.send(message+chr(23))
     def recv(self, lenth):
         """
         Recoit les messages du client.
@@ -78,11 +107,58 @@ class Client:
         self.connection.close()
         log("Le client "+str(self.infos)+" a ete deconnecte pour la raison suivante : "+reason)
         self.forcedisconnected = True
+    def get_groups_allowed(self):
+        verif_path("clients/groups/members/"+self.username+"/members.pkl")
+        self.members_file = open("clients/groups/members/"+self.username+"/members.pkl", "r")
+        try:
+            self.unpickler = pickle.Unpickler(self.members_file)
+            self.members = self.unpickler.load()
+        except:
+            self.members = {}
+        self.members_file.close()
+        return self.members
+
+    def get_private_key(self):
+        verif_path(self.data_file+"-datas"+os.sep+"RSAPrivateKey.key")
+        self.file = open(self.data_file+"-datas"+os.sep+"RSAPrivateKey.key", "r")
+        self.private_key = self.file.read()
+        self.file.close()
+
+
+    def set_groups_allowed(self, members):
+        self.members_file = open("clients/groups/members/"+self.username+"/members.pkl", "w")
+        self.pickler = pickle.Pickler(self.members_file)
+        self.pickler.dump(members)
+        self.members_file.close()
+
 
 hote = ""
 port = 26281
 
 args = parse_arguments()
+
+class Public_Keys:
+    def __init__(self):
+        self.update_keys()
+
+    def update_keys(self):
+        verif_path("clients"+os.sep+"convert-tables"+os.sep+"username_to_publicKey")
+        self.file = open("clients"+os.sep+"convert-tables"+os.sep+"username_to_publicKey", "r")
+        self.U = pickle.Unpickler(self.file)
+        try:
+            self.keys = self.U.load()
+        except:
+            self.keys = {}
+        self.file.close()
+
+    def get_key(self, username):
+        for self.x in self.keys.keys():
+            if self.x == username:
+                return self.keys[self.x]
+        return None
+
+
+
 
 if args.port:
     try:
@@ -153,11 +229,16 @@ class Releve(threading.Thread):
 
     def run(self):
         self.msgs_rcved = []
+        self.msg_recu = str()
         while not self.has_to_stop:
             try:
                 try:
-                    self.msg_recu = self.client.recv(33554432)
-                    self.msgs_rcved.append(self.msg_recu)
+                    while self.msg_recu == '' or not self.msg_recu.strip()[len(self.msg_recu.strip())-1] == chr(23):
+                        self.msg_recu += self.client.recv(33554432)
+                    self.msgs_rcved.append(self.msg_recu.strip())
+                    self.msg_recu = self.msg_recu.strip()
+                    self.msg_recu = self.msg_recu[:len(self.msg_recu)-1]
+                    print "Recu : "+self.msg_recu
                 except socket.error:
                     if not self.client.forcedisconnected:
                         log("Le client "+str(self.client.infos)+" s'est deconnecte.")
@@ -172,32 +253,49 @@ class Releve(threading.Thread):
                     pass
                 elif self.msg_recu.split("\\")[0] == "CONNECT":
                     try :
-                        self.f = open("clients/datas/"+"/".join(self.msg_recu.split("\\")[1:]),"r")
-                        self.client.send("CONNECT\\OK")
+                        self.f = open("clients/datas/"+"/".join(self.msg_recu.split("\\")[2:]),"r")
                         self.infos_client = self.f.read()
+                        if " = ".join(self.infos_client.split("\n")[0].split(" = ")[1:]) == self.msg_recu.split("\\")[1]:
+                            self.client.send("CONNECT\\OK")
+                        else:
+                            raise IOError
                         self.client.id_client = self.infos_client.split("\n")[3].split(" = ")[1]
                         self.client.username = self.infos_client.split("\n")[0].split(" = ")[1]
                         self.client.friends = self.infos_client.split("\n")[4].split(" = ")[1].split(", ")
                         self.client.logged_in = True
                         self.client.properties = self.infos_client.split("\n")
-                        self.client.data_file = "clients/datas/"+"/".join(self.msg_recu.split("\\")[1:])
+                        self.client.data_file = "clients/datas/"+"/".join(self.msg_recu.split("\\")[2:])
                         self.f.close()
                         threading.currentThread().setName(self.client.username)
                         log("Client "+str(self.client.infos)+" connecte en tant que "+str(self.client.username)+" id "+str(self.client.id_client))
                     except IOError:
                         self.client.send("CONNECT\\FAILED")
-                elif self.msg_recu.split("\\")[0]=="REGISTER" and len(self.msg_recu.split("\\")) == 4:
-                    verif_path("clients/convert-tables/users")
-                    verif_path("clients/convert-tables/mails")
-                    self.users = open(str("clients/convert-tables/users"),'r').read().split("\n")
-                    self.mails = open("clients/convert-tables/mails",'r').read().split("\n")
+                elif self.msg_recu.split("\\")[0]=="REGISTER" and len(self.msg_recu.split("\\")) >= 6:
+                    addUser.createPath()
+                    verif_path("clients"+os.sep+"convert-tables"+os.sep+"users")
+                    verif_path("clients"+os.sep+"convert-tables"+os.sep+"mails")
+                    self.users = open(str("clients"+os.sep+"convert-tables"+os.sep+"users"),'r').read().split("\n")
+                    self.mails = open("clients"+os.sep+"convert-tables"+os.sep+"mails",'r').read().split("\n")
                     if not self.msg_recu.split("\\")[1] in self.users:
                         if not self.msg_recu.split("\\")[3] in self.mails:
                             try:
-                                addUser.createUser(self.msg_recu.split("\\")[1], self.msg_recu.split('\\')[3], self.msg_recu.split('\\')[2])
+                                addUser.createUser(self.msg_recu.split("\\")[1], self.msg_recu.split('\\')[3], self.msg_recu.split('\\')[2], self.client.infos[0], self.msg_recu.split("\\")[4], "\\".join(self.msg_recu.split("\\")[5:]))
+                                public_Keys.update_keys()
                                 self.client.send("REGISTER\\OK")
                             except:
                                 self.client.send("REGISTER\\ERROR")
+                                print "Une erreur est survenue dans le thread "+str(threading.currentThread())
+                                filename = ""
+                                for x in range(10):
+                                    filename += str(random.randint(0, 9))
+                                print "Les informations sur le thread courant sont enregistrees dans le fichier errors/"+filename
+                                verif_path("errors"+os.sep+filename)
+                                self.f = open("errors"+os.sep+filename, "w")
+                                self.f.write("******************** RAPPORT D'ERREUR ********************\n\n\n\n")
+                                self.f.write("----- GLOBAL INFOS -----\n\nDate : "+", ".join(datetime.datetime.isoformat(datetime.datetime.now()).split("T"))+"\nPlateforme : "+sys.platform+"\nVersion du serveur : "+version+"\n"+"\n\n")
+                                self.f.write("----- SPECIFIC INFOS -----\n\nInformations generales sur le client : "+str(self.client.infos)+"\nConnecte en tant que : "+str(self.client.username)+"\nFichier de configuration du client : "+str(self.client.data_file)+"\nMessages envoyes par le client : "+str(self.msgs_rcved)+"\nDerniere requete : "+str(self.msg_recu)+"\nDetails de l'erreur : "+str(sys.exc_info())+"\n")
+                                self.f.close()
+                                log("Une erreur est survenue. Details enregistres dans errors/"+filename)
                         else:
                             self.client.send("REGISTER\\EMAIL_ALREADY_USED")
                     else:
@@ -213,27 +311,63 @@ class Releve(threading.Thread):
                             self.client.disconnect("Action non autorisee > "+self.msg_recu)
                     elif self.msg_recu.split("\\")[1] == "unreaded":
                         if self.client.logged_in:
-                            if len(self.msg_recu.split("\\"))==2:
-                                self.files = os.listdir("clients"+os.sep+"messages"+os.sep+self.client.username)
-                                """print self.dir_contains
-                                self.files = []
-                                for x in self.dir_contains:
-                                    if os.path.isfile(x):
-                                        self.files.append(x)"""
-                                self.client.send("GIVE\\unreaded\\"+str(len(self.files)))
-                            elif len(self.msg_recu.split("\\"))==3:
-                                self.conv_name = self.files[int(self.msg_recu.split("\\")[2])]
-                                if os.path.exists("clients/Keys/"+self.client.username+"/"+self.conv_name+"key"):
-                                    verif_path("clients/Keys/"+self.client.username+"/"+self.conv_name+"key")
-                                    self.key = open("clients/Keys/"+self.client.username+"/"+self.conv_name+"key","r")
-                                    self.client.send("KEY\\"+self.conv_name+"\\"+self.key.read())
-                                    self.key.close()
-                                    os.remove("clients/Keys/"+self.client.username+"/"+self.conv_name+"key")
-                                    #time.sleep(1)
-                                verif_path("clients/messages/"+self.client.username+"/"+self.conv_name)
-                                self.conv = open("clients/messages/"+self.client.username+"/"+self.conv_name, "r").read()
-                                self.client.send("GIVE\\unreaded\\"+self.conv_name+"\\"+self.conv)
-                                os.remove("clients/messages/"+self.client.username+"/"+self.conv_name)
+                            if len(self.msg_recu.split("\\"))==3:
+                                if self.msg_recu.split("\\")[2] == "s_conv":
+                                    self.files = os.listdir("clients"+os.sep+"messages"+os.sep+self.client.username)
+                                    """print self.dir_contains
+                                    self.files = []
+                                    for x in self.dir_contains:
+                                        if os.path.isfile(x):
+                                            self.files.append(x)"""
+                                    self.client.send("GIVE\\unreaded\\s_conv\\"+str(len(self.files)))
+                                elif self.msg_recu.split("\\")[2] == "group":
+                                    verif_path("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"new_groups"+os.sep+self.client.username, folder = True)
+                                    verif_path("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"groups_already_joined"+os.sep+self.client.username, folder = True)
+                                    self.files = os.listdir("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"new_groups"+os.sep+self.client.username)
+                                    self.old_groups = os.listdir("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"groups_already_joined"+os.sep+self.client.username)
+                                    self.client.send("GIVE\\unreaded\\groups\\"+str(len(self.files)+len(self.old_groups)))
+                            elif len(self.msg_recu.split("\\"))==4:
+                                if self.msg_recu.split("\\")[2] == "s_conv":
+                                    self.conv_name = self.files[int(self.msg_recu.split("\\")[3])]
+                                    if os.path.exists("clients/Keys/"+self.client.username+"/"+self.conv_name+"key"):
+                                        verif_path("clients/Keys/"+self.client.username+"/"+self.conv_name+"key")
+                                        self.key = open("clients/Keys/"+self.client.username+"/"+self.conv_name+"key","r")
+                                        self.client.send("KEY\\"+self.conv_name+"\\"+self.key.read())
+                                        self.key.close()
+                                        os.remove("clients/Keys/"+self.client.username+"/"+self.conv_name+"key")
+                                        #time.sleep(1)
+                                    verif_path("clients/messages/"+self.client.username+"/"+self.conv_name)
+                                    self.conv = open("clients/messages/"+self.client.username+"/"+self.conv_name, "r").read()
+                                    self.client.send("GIVE\\unreaded\\s_conv\\"+self.conv_name+"\\"+self.conv)
+                                    os.remove("clients/messages/"+self.client.username+"/"+self.conv_name)
+                                elif self.msg_recu.split("\\")[2] == "group":
+                                    if int(self.msg_recu.split("\\")[3]) < len(self.files):
+                                        self.conv_name = self.files[int(self.msg_recu.split("\\")[3])]
+                                        if os.path.exists("clients/groups/infos/"+self.client.username+"/"+self.conv_name+".info"):
+                                            self.config = open("clients/groups/infos/"+self.client.username+"/"+self.conv_name+".info", "r")
+                                            self.a_envoyer = "INFOS\\"+self.conv_name+"\\"+"\\".join(self.config.read().split("\n"))
+                                            self.client.send(self.a_envoyer)
+                                            self.config.close()
+                                            os.remove("clients/groups/infos/"+self.client.username+"/"+self.conv_name+".info")
+                                            self.client.get_groupsids()
+                                            self.client.groupsids[self.a_envoyer.split("\\")[4].split("=")[1]] = self.a_envoyer.split("\\")[1]
+                                            self.client.update_groupsids()
+                                        self.client.get_groupsids()
+                                        self.group_id = find_key_in_dict(self.client.groupsids, self.a_envoyer.split("\\")[1])
+                                        self.conv = open("clients/groups/messages/new_groups/"+self.client.username+"/"+self.conv_name, "r")
+                                        self.client.send("GIVE\\unreaded\\groups\\"+self.group_id+"\\"+self.conv.read())
+                                        self.conv.close()
+                                        os.remove("clients/groups/messages/new_groups/"+self.client.username+"/"+self.conv_name)
+                                    elif int(self.msg_recu.split("\\")[3]) >= len(self.files) and int(self.msg_recu.split("\\")[3])-len(self.files) < len(self.old_groups):
+                                        self.client.get_groupsids()
+                                        self.conv_name = self.old_groups[int(self.msg_recu.split("\\")[3])-len(self.files)]
+                                        if self.conv_name in self.client.groupsids.keys():
+                                            self.conv_file = open("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"groups_already_joined"+os.sep+self.client.username+os.sep+self.conv_name, "r")
+                                            self.client.send("GIVE\\unreaded\\groups\\"+self.conv_name+"\\"+self.conv_file.read())
+                                            self.conv_file.close()
+                                            os.remove("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"groups_already_joined"+os.sep+self.client.username+os.sep+self.conv_name)
+                                    else:
+                                        self.client.send("GIVE\\ERROR")
                         else :
                             self.client.send("GET\\unreaded\\REFUSED")
                             log("Le client "+str(self.client.infos)+" a demande ses messages non lus alors qu'il n'etait pas connecte. Son acces a ete refuse. Il va etre deconnecte.")
@@ -252,6 +386,20 @@ class Releve(threading.Thread):
                             self.client.send("GET\\REFUSED")
                             log("Le client "+str(self.client.infos)+" a demande une sauvegarde sans etre connecte. Son acces a ete refuse. Il va etre deconnecte.")
                             self.client.disconnect("Action non autorisee > "+self.msg_recu)
+                    elif self.msg_recu.split("\\")[1] == "private_key":
+                        if self.client.logged_in:
+                            self.client.get_private_key()
+                            self.client.send("GIVE\\PRIVATE\\"+self.client.private_key)
+                        else:
+                            self.client.send("GIVE\\REFUSED")
+                    elif self.msg_recu.split("\\")[1] == "publickey" and len(self.msg_recu.split('\\')) == 3:
+                        if self.client.logged_in:
+                            if public_Keys.get_key(self.msg_recu.split("\\")[2]):
+                                self.client.send("GIVE\\PUBLIC\\"+self.msg_recu.split('\\')[1]+"\\"+public_Keys.get_key(self.msg_recu.split("\\")[2]))
+                            else:
+                                self.client.send("GIVE\\PUBLIC\\UNABLE")
+                        else:
+                            self.client.send("GIVE\\PUBLIC\\REFUSED")
                 elif self.msg_recu.split("\\")[0] == "SEND" and len(self.msg_recu.split("\\")) > 2:
                     if self.client.logged_in:
                         verif_path("clients/messages/"+self.msg_recu.split("\\")[1]+"/"+self.client.username)
@@ -263,6 +411,23 @@ class Releve(threading.Thread):
                         self.client.send("SEND\\REFUSED")
                         log("Le client "+str(self.client.infos)+" a tente d'envoyer un message a "+self.msg_recu.split("\\")[1]+" alors qu'il n'etait pas connecte. Son acces a ete refuse. Il va etre deconnecte.")
                         self.client.disconnect("Action non autorisee > "+self.msg_recu)
+                elif self.msg_recu.split("\\")[0] == "SEND_GROUP"  and len(self.msg_recu.split("\\")) >= 4:
+                    if self.client.logged_in:
+                        self.destinataires = self.msg_recu.split("\\")[1].split(", ")
+                        self.id = self.msg_recu.split("\\")[2]
+                        self.msg = "\\".join(self.msg_recu.split("\\")[3:])
+                        self.client.get_groupsids()
+                        if self.id in self.client.groupsids.keys():
+                            for self.x in self.destinataires:
+                                verif_path("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"groups_already_joined"+os.sep+self.x, folder = True)
+                                self.file = open("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"groups_already_joined"+os.sep+self.x+os.sep+self.id, "a")
+                                self.file.write(self.msg+"\n")
+                                self.file.close()
+                            self.client.send("SEND\\OK")
+                        else:
+                            self.client.send("SEND\\REFUSED")
+                    else:
+                        self.client.send("SEND\\REFUSED")
                 elif self.msg_recu.split("\\")[0] == "ADD" and len(self.msg_recu.split("\\")) > 1:
                     if self.msg_recu.split("\\")[1] == "friend" and len(self.msg_recu.split("\\")) > 2:
                         if self.client.logged_in:
@@ -310,8 +475,8 @@ class Releve(threading.Thread):
                         """self.f = open("clients/Backups/"+self.client.username+"/backup.zip","w")
                         self.f.write("\\".join(self.msg_recu.split("\\")[1:]))
                         self.f.close()"""
-                        verif_path("clients/Backups/"+self.client.username+"/backup.zip")
-                        self.bkp_file = open("clients/Backups/"+self.client.username+"/backup.zip", 'wb')
+                        verif_path("clients"+os.sep+"Backups"+os.sep+self.client.username+os.sep+"backup.zip")
+                        self.bkp_file = open("clients"+os.sep+"Backups"+os.sep+self.client.username+os.sep+"backup.zip", 'wb')
                         self.bkp = binascii.unhexlify("\\".join(self.msg_recu.split("\\")[1:]))
                         self.bkp_file.write(self.bkp)
                         self.bkp_file.close()
@@ -322,11 +487,11 @@ class Releve(threading.Thread):
                     if self.msg_recu.split("\\")[1] == "s_conv" and len(self.msg_recu.split("\\")) > 3:
                         if self.client.logged_in:
                             try:
-                                os.mkdir("clients/Keys/"+self.msg_recu.split("\\")[2])
+                                os.mkdir("clients"+os.sep+"Keys"+os.sep+self.msg_recu.split("\\")[2])
                             except:
                                 pass
-                            verif_path("clients/Backups/"+self.client.username+"/backup.zip")
-                            self.f = open("clients/Keys"+"/"+self.msg_recu.split("\\")[2]+"/"+self.client.username+"key","w")
+                            verif_path("clients"+os.sep+"Backups"+os.sep+self.client.username+os.sep+"backup.zip")
+                            self.f = open("clients"+os.sep+"Keys"+os.sep+self.msg_recu.split("\\")[2]+os.sep+self.client.username+"key","w")
                             self.f.write("\\".join(self.msg_recu.split("\\")[3:]))
                             self.f.close()
                             self.client.send("S_CONV\\CREATED")
@@ -341,12 +506,33 @@ class Releve(threading.Thread):
                             self.key = self.msg_recu.split("\\")[3]
                             self.lenth = self.msg_recu.split("\\")[4]
                             self.dests = self.msg_recu.split("\\")[5:]
+                            self.new_id = ""
+                            verif_path("clients"+os.sep+"convert-tables"+os.sep+"groupsids")
+                            self.groupsids_file = open("clients"+os.sep+"convert-tables"+os.sep+"groupsids", "r")
+                            self.groupsids = self.groupsids_file.read()
+                            self.groupsids_file.close()
+                            self.groupsids = self.groupsids.split("\n")
+                            while True:
+                                for self.x in range(12):
+                                    self.new_id += str(random.randint(0, 9))
+                                if not self.new_id in self.groupsids:
+                                    break
+                                else:
+                                    self.new_id = ""
+                            self.groupsids_file = open("clients"+os.sep+"convert-tables"+os.sep+"groupsids", "a")
+                            self.groupsids_file.write(self.new_id+"\n")
+                            self.groupsids_file.close()
+
                             for self.x in self.dests:
-                                verif_path("clients/groups/"+self.x+"/"+self.nom+".info")
-                                self.fileinfo = open("clients/groups/"+self.x+"/"+self.nom+".info", "w")
-                                self.fileinfo.write("Key="+self.key+"\nMembers="+", ".join(self.dests))
+                                verif_path("clients"+os.sep+"groups"+os.sep+"infos"+os.sep+""+self.x+os.sep+self.nom+".info")
+                                verif_path("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"new_groups"+os.sep+self.x+os.sep+self.nom)
+                                self.fileinfo = open("clients"+os.sep+"groups"+os.sep+"infos"+os.sep+self.x+os.sep+self.nom+".info", "w")
+                                self.messagefile = open("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"new_groups"+os.sep+self.x+os.sep+self.nom, "w")
+                                self.fileinfo.write("Key="+self.key+"\nMembers="+", ".join(self.dests)+"\nGroup id="+self.new_id)
+                                self.messagefile.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"\\SERVER"+"]"+crpt.crypt_message(self.client.username+" has created this group with "+", ".join(self.dests), self.key))
                                 self.fileinfo.close()
-                            self.client.send("GROUP\\CREATED")
+                                self.messagefile.close()
+                            self.client.send("GROUP\\CREATED\\"+self.new_id)
                         else:
                             log("Le client "+self.client.infos+" a tente de demarrer un nouveau groupe avec "+self.msg_recu.split("\\")[5:]+" sans etre enregistre. Il va etre deconnecte.")
                             self.client.send("GROUP\\REFUSED")
@@ -358,24 +544,36 @@ class Releve(threading.Thread):
                     log("Le client "+str(self.client.infos)+" a envoye un message non repertorie. Son acces a ete refuse. Il va etre deconnecte.")
                     self.client.disconnect("Action non autorisee > "+self.msg_recu)
                 self.msg_recu=""
-            except:
+
+            except Exception as self.e:
                 print "Une erreur est survenue dans le thread "+str(threading.currentThread())
-                filename = ""
+                self.filename = ""
                 for x in range(10):
-                    filename += str(random.randint(0, 9))
-                print "Les informations sur le thread courant sont enregistrées dans le fichier errors/"+filename
-                verif_path("errors/"+filename)
-                self.f = open("errors/"+filename, "w")
+                    self.filename += str(random.randint(0, 9))
+                print "Les informations sur le thread courant sont enregistrees dans le fichier errors/"+self.filename
+                verif_path("errors"+os.sep+self.filename)
+                self.f = open("errors/"+self.filename, "w")
                 self.f.write("******************** RAPPORT D'ERREUR ********************\n\n\n\n")
-                self.f.write("----- GLOBAL INFOS -----\n\nDate : "+", ".join(datetime.datetime.isoformat(datetime.datetime.now()).split("T"))+"\nPlateforme : "+sys.platform+"\nVersion du serveur : "+version+"\n"+"\n\n")
-                self.f.write("----- SPECIFIC INFOS -----\n\nInformations generales sur le client : "+str(self.client.infos)+"\nConnecte en tant que : "+self.client.username+"\nFichier de configuration du client : "+self.client.data_file+"\nMessages envoyes par le client : "+str(self.msgs_rcved)+"\nDerniere requete : "+self.msg_recu+"\nDetails de l'erreur : "+str(sys.exc_info())+"\n")
+                self.f.write(unicode("----- GLOBAL INFOS -----\n\nDate : "+", ".join(datetime.datetime.isoformat(datetime.datetime.now()).split("T"))+"\nPlateforme : "+sys.platform+"\nVersion du serveur : "+version+"\n"+"\n\n"))
+                self.squelette = "----- SPECIFIC INFOS -----\n\nInformations generales sur le client : \nConnecte en tant que : \nFichier de configuration du client : \nMessages envoyes par le client : \nDerniere requete : \nDetails de l'erreur : ,"
+                """print str(self.client.infos)
+                print str(self.client.username)
+                print str(self.client.data_file)
+                print str(self.msgs_rcved)
+                print str(self.msg_recu)
+                print str(sys.exc_info())
+                print str(self.e)
+                print self.squelette"""
+                self.f.write("----- SPECIFIC INFOS -----\n\nInformations generales sur le client : "+str(self.client.infos)+"\nConnecte en tant que : "+str(self.client.username)+"\nFichier de configuration du client : "+str(self.client.data_file)+"\nMessages envoyes par le client : "+str(self.msgs_rcved)+"\nDerniere requete : "+str(self.msg_recu)+"\nDetails de l'erreur : "+str(sys.exc_info())+", "+unicode(self.e)+"\n")
                 self.f.close()
-                log("Une erreur est survenue. Details enregistres dans errors/"+filename)
+                self.client.send("ERROR\\"+self.filename)
+                log("Une erreur est survenue. Details enregistres dans errors/"+self.filename)
         print "Boucle finie dans le thread "+str(threading.currentThread())
 
 
 
-print "Demarrage du serveur.                                         "
+print "Demarrage du serveur.                                       "
+public_Keys = Public_Keys()
 accepter_client = Accepter_client()
 accepter_client.start()
 clients = []
