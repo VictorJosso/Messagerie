@@ -236,7 +236,7 @@ class Releve(threading.Thread):
                 try:
                     while self.msg_recu == '' or not chr(23) in self.msg_recu.strip():
                         self.msg_recu += self.client.recv(33554432)
-                    self.next_msg = self.msg_recu[self.msg.index(chr(23))+1:]
+                    self.next_msg = self.msg_recu[self.msg_recu.index(chr(23))+1:]
                     self.msg_recu = self.msg_recu[:self.msg_recu.index(chr(23))].strip()
                     self.msgs_rcved.append(self.msg_recu)
                 except socket.error:
