@@ -125,22 +125,28 @@ class Releve(threading.Thread):
 		self.isanerror = False
 		self.i = 0
 		self.msg = str()
+		self.next_msg = str()
 	def run(self):
 		while self.running:
 			pass
 
 	def releve(self):
 		self.msg = str()
-		while self.msg == '' or not self.msg.strip()[len(self.msg.strip())-1] == chr(23):
+		self.msg += self.next_msg
+		while self.msg == '' or not chr(23) in self.msg.strip():
 			try:
 				self.msg += connection_server.recv(33554432)
+				print "Recu "+self.msg
 			except Exception as e:
 				print "Le serveur est injoignable. Veuillez verifier votre connexion internet et reessayer. Si votre connexion est stable, et que le probleme persiste, il est probable que le serveur soit hors ligne et nous vous suggerons de patienter jusqu'a ce qu'il soit remis en service. Merci."
 				self.isanerror = True
 				return "ERROR"
 			self.i +=1
+		self.next_msg = self.msg[self.msg.index(chr(23))+1:]
+		print "Next message : "+self.next_msg
+		self.msg = self.msg[:self.msg.index(chr(23))]
+		print "Message apres traitement : "+self.msg
 		self.msg = self.msg.strip()
-		self.msg = self.msg[:len(self.msg)-1]
 		self.i = 0
 		log(self.msg) #reception du message envoye par le server.
 
