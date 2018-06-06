@@ -226,6 +226,7 @@ class Releve(threading.Thread):
         self.client = client
         threading.Thread.__init__(self)
         self.has_to_stop = False
+        self.next_msg = str()
 
     def run(self):
         self.msgs_rcved = []
@@ -233,12 +234,11 @@ class Releve(threading.Thread):
         while not self.has_to_stop:
             try:
                 try:
-                    while self.msg_recu == '' or not self.msg_recu.strip()[len(self.msg_recu.strip())-1] == chr(23):
+                    while self.msg_recu == '' or not chr(23) in self.msg_recu.strip():
                         self.msg_recu += self.client.recv(33554432)
-                    self.msgs_rcved.append(self.msg_recu.strip())
-                    self.msg_recu = self.msg_recu.strip()
-                    self.msg_recu = self.msg_recu[:len(self.msg_recu)-1]
-                    print "Recu : "+self.msg_recu
+                    self.next_msg = self.msg_recu[self.msg.index(chr(23))+1:]
+                    self.msg_recu = self.msg_recu[:self.msg_recu.index(chr(23))].strip()
+                    self.msgs_rcved.append(self.msg_recu)
                 except socket.error:
                     if not self.client.forcedisconnected:
                         log("Le client "+str(self.client.infos)+" s'est deconnecte.")
@@ -261,7 +261,7 @@ class Releve(threading.Thread):
                             raise IOError
                         self.client.id_client = self.infos_client.split("\n")[3].split(" = ")[1]
                         self.client.username = self.infos_client.split("\n")[0].split(" = ")[1]
-                        self.client.friends = self.infos_client.split("\n")[4].split(" = ")[1].split(", ")
+                        self.client.friends = [x for x in self.infos_client.split("\n")[4].split(" = ")[1].split(", ") if not x == " "]
                         self.client.logged_in = True
                         self.client.properties = self.infos_client.split("\n")
                         self.client.data_file = "clients/datas/"+"/".join(self.msg_recu.split("\\")[2:])
@@ -480,6 +480,8 @@ class Releve(threading.Thread):
                         self.bkp = binascii.unhexlify("\\".join(self.msg_recu.split("\\")[1:]))
                         self.bkp_file.write(self.bkp)
                         self.bkp_file.close()
+                        self.client.send("BACKUP\\OK")
+
                     else:
                         self.client.send("BACKUP\\REFUSED")
                         self.client.disconnect("Action non autorisee > "+self.msg_recu)
