@@ -23,7 +23,7 @@ import Crypt as crpt
 import Uncrypt as ucrpt
 import generate_random_passwords as r_pass
 
-hote = "127.0.0.1"
+hote = "josso.fr"
 port = 26281
 
 if  not sys.platform[:3] == "win":
@@ -197,14 +197,19 @@ def backup():
 	backup_crpt = crpt.crypt("backup.zip", mdp)
 	bkp_file = open(backup_crpt, 'rb')
 	msg_to_send = "BACKUP\\"+binascii.hexlify(bkp_file.read())
+	bkp_file.close()
 	print "Envoi de la sauvegarde..."
 	connection_server.send(msg_to_send+chr(23))
-	print "Envoye ! "
-	bkp_file.close()
-	os.remove(backup_crpt)
-	with open("bkp_sended.txt", "a") as f:
-		f.write(msg_to_send)
-	return backup_crpt
+	msg_from_server = attendre_reponse()
+	if msg_from_server == "BACKUP\\OK":
+		print "Envoye ! "
+		os.remove(backup_crpt)
+		with open("bkp_sended.txt", "a") as f:
+			f.write(msg_to_send)
+		return backup_crpt
+	else:
+		print "Une erreur est survenue lors de l'envoi de la sauvegarde. Vous n'allez pas être deconnecte."
+		return "ERROR"
 
 def dezip(filezip, pathdst = ''):
 	if pathdst == '': pathdst = os.getcwd()  ## on dezippe dans le repertoire locale
@@ -530,14 +535,17 @@ def afficher_menu():
 			envoyer_message()
 		elif rep == "99" or rep == "99+":
 			if rep == "99+":
-				os.remove("log_infos.pkl")
 				fichier = backup()
-				while 1:
-					try:
-						shutil.rmtree(username)
-						break
-					except:
-						pass
+				if not fichier == "ERROR":
+					while 1:
+						try:
+							shutil.rmtree(username)
+							break
+						except:
+							pass
+					os.remove("log_infos.pkl")
+				else:
+					pass
 			releve.running = False
 			connection_server.send("ASKQUITTING"+chr(23))
 			releve.join()
@@ -551,24 +559,25 @@ def envoyer_message(dest = None, conv_type = None):
 	if not dest:
 		connection_server.send(("GET\\friends"+chr(23)))
 		msg_from_server = attendre_reponse()
+		print "Mes amis sont "+msg_from_server
 		if msg_from_server == "GET\\friends\\REFUSED":
-			"print" "Erreur lors de la récuperation de vos amis. Cela est probablement dut à une erreur dans votre connection. Solution proposee : rédemarer l'application et se reconnecter."
+			print "Erreur lors de la récuperation de vos amis. Cela est probablement dut à une erreur dans votre connection. Solution proposee : rédemarer l'application et se reconnecter."
 		else:
+			msg_from_server = msg_from_server.split(", ")
+			for x in msg_from_server:
+				if x == " " or x == "":
+					msg_from_server.remove(x)
 			menu_text = ""
 			menu_text += "\nVoici la liste de vos amis. Tapez leur numéro pour leur envoyer un message.\n"+colours["yellow"]+colours["reverse"]+"[ 0 ] Retour au menu principal\n"+colours["default"]
 			rep_available = ["0", "G"]
-			msg_from_server = msg_from_server.split(", ")
-			for x in msg_from_server:
-				if x == " ":
-					msg_from_server.remove(x)
 			for x in range(len(msg_from_server)):
 				menu_text += "[ "+str(x+1)+" ] "+msg_from_server[x]+"\n"
 				rep_available.append(str(x+1))
-			if len(rep_available) == 0 :
+			if len(rep_available) == 2 :
 				menu_text += "Si tu n'as pas d'amis, prend un curly ;)\n"
 			menu_text += colours["green"]+"[ + ]"+" Ajouter un ami.\n"+colours["default"]
 			rep_available.append("+")
-			if len(rep_available) > 1 :
+			if len(rep_available) > 3 :
 				menu_text += colours["red"]+"[ - ]"+" Supprimer un ami.\n"+colours["default"]
 				rep_available.append("-")
 			menu_text += colours["blue"]+"[ G ] Créer un nouveau groupe.\n"+colours["default"]
