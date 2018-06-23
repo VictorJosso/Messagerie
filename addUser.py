@@ -31,7 +31,7 @@ def createPath():
                 print("Error: {}".format(e))
 
 
-def createUser(username, email, filename, ip_source, private_key, public_key):
+def createUser(username, email, filename, ip_source, private_key, public_key, verif_code):
     createPath()
 
     identifiant = str(len(os.listdir("clients/datas")) + 1)
@@ -44,7 +44,8 @@ def createUser(username, email, filename, ip_source, private_key, public_key):
     f.write("id = " + identifiant + "\n")
     f.write("friends =  \n")
     f.write("joined = "+datetime.datetime.isoformat(datetime.datetime.now())+"\n")
-    f.write("Creation_IP = "+ip_source)
+    f.write("Creation_IP = "+ip_source+"\n")
+    f.write("verif_code_email = "+str(verif_code))
     f.close()
 
     try:

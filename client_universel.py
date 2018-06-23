@@ -136,16 +136,13 @@ class Releve(threading.Thread):
 		while self.msg == '' or not chr(23) in self.msg.strip():
 			try:
 				self.msg += connection_server.recv(33554432)
-				print "Recu "+self.msg
 			except Exception as e:
 				print "Le serveur est injoignable. Veuillez verifier votre connexion internet et reessayer. Si votre connexion est stable, et que le probleme persiste, il est probable que le serveur soit hors ligne et nous vous suggerons de patienter jusqu'a ce qu'il soit remis en service. Merci."
 				self.isanerror = True
 				return "ERROR"
 			self.i +=1
 		self.next_msg = self.msg[self.msg.index(chr(23))+1:]
-		print "Next message : "+self.next_msg
 		self.msg = self.msg[:self.msg.index(chr(23))]
-		print "Message apres traitement : "+self.msg
 		self.msg = self.msg.strip()
 		self.i = 0
 		log(self.msg) #reception du message envoye par le server.
@@ -296,7 +293,22 @@ def attendre_reponse():
 	else:
 		sys.exit()
 
-def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
+
+def get_email_verif_code():
+	while 1:
+		verif_code = raw_input("Saisissez le code ici : ")
+		try:
+			int(verif_code)
+			if len(verif_code) == 6:
+				break
+			else:
+				print colours['red']+"Le code de validation est un code a 6 chiffres. Veuillez ressayer..."+colours['default']
+		except:
+			print colours['red']+"Le code de validation est un nombre... Veuillez reessayer"+colours['default']
+
+	return verif_code
+
+def log_in(already_in = False, user = "", passwd = "", hash_512 = "", has_to_ask_for_backup = False):
 	global username
 	global mdp
 	if not already_in :
@@ -329,6 +341,33 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
 						get_backup() #Recuperation de la sauvegarde.
 						verif_path(username+os.sep+"messages", True)
 						break
+					elif msg_from_server.split("\\")[0] == 'CONNECT' and msg_from_server.split("\\")[1] == "CONFIRM_EMAIL":
+						print "Pour vous connecter, veuillez saisir le code de confirmation d'email a 6 chiffres qui vous a ete envoye par mail."
+						verified = False
+						for x in range(3):
+							connection_server.send("VERIF_MAIL\\"+infos+"\\"+get_email_verif_code()+chr(23))
+							msg_from_server = attendre_reponse()
+							if msg_from_server == "VERIF_MAIL\\VERIFIED":
+								print colours["green"]+colours["reverse"]+colours["bold"]+"Votre adresse mail a ete verifiee"+colours["default"]
+								verified = True
+								break
+							elif msg_from_server == "VERIF_MAIL\\INVALID" or msg_from_server == "VERIF_MAIL\\ALREADY_DONE":
+								print colours["red"]+colours["reverse"]+colours["bold"]+"Le code est incorrect. Merci de ressayer."+colours["default"]
+							elif msg_from_server == "VERIF_MAIL\\UNABLE":
+								print "Il y a eu une erreur. Veuillez quitter l'application et reessayer."
+								break
+
+						if not verified:
+							print 'Trop de tentatives. Au revoir.'
+							connection_server.close()
+							releve.join()
+							sys.exit()
+
+						else:
+							log_in(already_in = True, user = username, passwd = passwd, hash_512 = infos, has_to_ask_for_backup = True)
+							break
+
+
 					else :
 						#Le serveur a refuse l'authentification.
 						print colours["red"]+colours["reverse"]+colours["bold"]+"L'authentification à echouée... Veuillez réessayer."+colours["default"]
@@ -356,6 +395,15 @@ def log_in(already_in = False, user = "", passwd = "", hash_512 = ""):
 			print colours["green"]+colours["reverse"]+colours["bold"]+"Identification réussie !"+colours["default"]
 			username = user
 			mdp = passwd
+			if has_to_ask_for_backup:
+				f = open("log_infos.pkl", "w")
+				P = pickle.Pickler(f)
+				log_infos = {"user":user, "passwd":passwd, "hash":hash_512}
+				P.dump(log_infos) #Sauvegarde des infos de log dans un fichier. Ce fichier sera supprime si l'utilisateur demande sa deconnexion.
+				f.close()
+				get_backup()
+			else:
+				pass
 		else :
 			print colours["red"]+colours["reverse"]+colours["bold"]+"Les identifiants enregistrés semblent etre incorrects. Merci de saisir vos identifiants ci dessous."+colours["default"]
 			os.remove("log_infos.pkl")
@@ -433,7 +481,6 @@ def inbox(already_in = False, conv_id = 0):
 	if nbr_convs:
 		for x in range(nbr_convs):
 			i = 0
-			print "Envoye : "+"GET\\unreaded\\group\\"+str(x)
 			connection_server.send(("GET\\unreaded\\group\\"+str(x)+chr(23)))
 			msg_from_server = attendre_reponse()
 			if msg_from_server.split("\\")[0]=="INFOS":
@@ -441,7 +488,6 @@ def inbox(already_in = False, conv_id = 0):
 				verif_path(username+os.sep+"groups"+os.sep+"messages", True)
 				key_file_name = username+os.sep+"groups"+os.sep+"infos"+os.sep+msg_from_server.split("\\")[1]+".info"
 				f = open(key_file_name,'w')
-				print "Fichier ouvert : "+key_file_name
 				f.write("\n".join(msg_from_server.split("\\")[2:]))
 				f.close()
 				"""verif_path(username+os.sep+"datas"+os.sep+"groupsids.pkl")
@@ -565,7 +611,6 @@ def envoyer_message(dest = None, conv_type = None):
 	if not dest:
 		connection_server.send(("GET\\friends"+chr(23)))
 		msg_from_server = attendre_reponse()
-		print "Mes amis sont "+msg_from_server
 		if msg_from_server == "GET\\friends\\REFUSED":
 			print "Erreur lors de la récuperation de vos amis. Cela est probablement dut à une erreur dans votre connection. Solution proposee : rédemarer l'application et se reconnecter."
 		else:
@@ -600,6 +645,8 @@ def envoyer_message(dest = None, conv_type = None):
 						print "Cet ami n'existe pas !"
 					elif msg_from_server == "ADD\\friend\\REFUSED":
 						print "Acces refuse !"
+					elif msg_from_server == "ADD\\FRIEND\\REFUSED\\ADDING_OWN_USERNAME":
+						print "Il est interdit de s'ajouter soi-meme en ami ;)"
 				elif len(friend_to_add) == 0:
 					envoyer_message()
 					return 0
@@ -750,7 +797,6 @@ def envoyer_message(dest = None, conv_type = None):
 		message = raw_input(">>")
 		if not len(message) == 0:
 			msg_crypted = "["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+username+"]"+crpt.crypt_message(message, key)
-			print "Message to send : "+msg_crypted
 			if conv_type == "single":
 				connection_server.send(("SEND\\"+dest+"\\"+msg_crypted+chr(23)))
 			else:

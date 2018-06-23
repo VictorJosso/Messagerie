@@ -17,6 +17,7 @@ import pickle
 
 import addUser
 import Crypt as crpt
+import emailSender
 
 version  = "1.0"
 
@@ -255,6 +256,11 @@ class Releve(threading.Thread):
                     try :
                         self.f = open("clients/datas/"+"/".join(self.msg_recu.split("\\")[2:]),"r")
                         self.infos_client = self.f.read()
+                        self.email_verified = self.infos_client.split("\n")[2].split(" = ")[1]
+                        self.f.close()
+                        if not self.email_verified == "True":
+                            self.client.send("CONNECT\\CONFIRM_EMAIL")
+                            raise ValueError
                         if " = ".join(self.infos_client.split("\n")[0].split(" = ")[1:]) == self.msg_recu.split("\\")[1]:
                             self.client.send("CONNECT\\OK")
                         else:
@@ -265,11 +271,37 @@ class Releve(threading.Thread):
                         self.client.logged_in = True
                         self.client.properties = self.infos_client.split("\n")
                         self.client.data_file = "clients/datas/"+"/".join(self.msg_recu.split("\\")[2:])
-                        self.f.close()
                         threading.currentThread().setName(self.client.username)
                         log("Client "+str(self.client.infos)+" connecte en tant que "+str(self.client.username)+" id "+str(self.client.id_client))
                     except IOError:
                         self.client.send("CONNECT\\FAILED")
+                    except ValueError:
+                        pass
+                elif self.msg_recu.split("\\")[0] == "VERIF_MAIL" and len(self.msg_recu.split("\\")) == 3:
+                    try:
+                        print 'Trying to open file : '+"clients/datas/"+self.msg_recu.split("\\")[1]
+                        self.file = open("clients/datas/"+self.msg_recu.split("\\")[1], "r")
+                        print "Done."
+                        self.infos = self.file.read()
+                        self.file.close()
+                        if self.infos.split("\n")[2].split(" = ")[1] == "False":
+                            if self.infos.split("\n")[7].split(" = ")[1] == self.msg_recu.split("\\")[2]:
+                                self.file = open("clients/datas/"+self.msg_recu.split("\\")[1], "w")
+                                self.to_write = []
+                                for self.x in self.infos.split("\n"):
+                                    if not self.x.split(" = ")[0] == "email_verified":
+                                        self.to_write.append(self.x)
+                                    else:
+                                        self.to_write.append("email_verified = True")
+                                self.file.write("\n".join(self.to_write))
+                                self.file.close()
+                                self.client.send("VERIF_MAIL\\VERIFIED")
+                            else:
+                                self.client.send("VERIF_MAIL\\INVALID")
+                        else:
+                            self.client.send("VERIF_MAIL\\ALREADY_DONE")
+                    except:
+                        self.client.send("VERIF_MAIL\\UNABLE")
                 elif self.msg_recu.split("\\")[0]=="REGISTER" and len(self.msg_recu.split("\\")) >= 6:
                     addUser.createPath()
                     verif_path("clients"+os.sep+"convert-tables"+os.sep+"users")
@@ -279,8 +311,10 @@ class Releve(threading.Thread):
                     if not self.msg_recu.split("\\")[1] in self.users:
                         if not self.msg_recu.split("\\")[3] in self.mails:
                             try:
-                                addUser.createUser(self.msg_recu.split("\\")[1], self.msg_recu.split('\\')[3], self.msg_recu.split('\\')[2], self.client.infos[0], self.msg_recu.split("\\")[4], "\\".join(self.msg_recu.split("\\")[5:]))
+                                self.verif_code = random.randint(100000, 999999)
+                                addUser.createUser(self.msg_recu.split("\\")[1], self.msg_recu.split('\\')[3], self.msg_recu.split('\\')[2], self.client.infos[0], self.msg_recu.split("\\")[4], "\\".join(self.msg_recu.split("\\")[5:]), self.verif_code)
                                 public_Keys.update_keys()
+                                emailSender.envoyer_confirmation(self.msg_recu.split('\\')[3], self.verif_code, self.msg_recu.split("\\")[1])
                                 self.client.send("REGISTER\\OK")
                             except:
                                 self.client.send("REGISTER\\ERROR")
@@ -433,19 +467,22 @@ class Releve(threading.Thread):
                         if self.client.logged_in:
                             verif_path("clients/convert-tables/users")
                             self.users = open("clients/convert-tables/users",'r').read().split("\n")
-                            if "\\".join(self.msg_recu.split("\\")[2:len(self.msg_recu.split("\\"))]) in self.users:
-                                self.client.friends.append("\\".join(self.msg_recu.split("\\")[2:len(self.msg_recu.split("\\"))]))
-                                self.client.properties[4] = self.client.properties[4].split(" = ")
-                                self.client.properties[4][1] = self.client.properties[4][1].split(", ")
-                                self.client.properties[4][1].append("\\".join(self.msg_recu.split("\\")[2:len(self.msg_recu.split("\\"))]))
-                                self.client.properties[4][1] = ", ".join(self.client.properties[4][1])
-                                self.client.properties[4] = " = ".join(self.client.properties[4])
-                                self.f = open(self.client.data_file,"w")
-                                self.f.write("\n".join(self.client.properties))
-                                self.f.close()
-                                self.client.send("ADD\\friend\\OK")
-                            else :
-                                self.client.send("ADD\\friend\\404")
+                            if not "\\".join(self.msg_recu.split("\\")[2:len(self.msg_recu.split("\\"))]) == self.client.username:
+                                if "\\".join(self.msg_recu.split("\\")[2:len(self.msg_recu.split("\\"))]) in self.users:
+                                    self.client.friends.append("\\".join(self.msg_recu.split("\\")[2:len(self.msg_recu.split("\\"))]))
+                                    self.client.properties[4] = self.client.properties[4].split(" = ")
+                                    self.client.properties[4][1] = self.client.properties[4][1].split(", ")
+                                    self.client.properties[4][1].append("\\".join(self.msg_recu.split("\\")[2:len(self.msg_recu.split("\\"))]))
+                                    self.client.properties[4][1] = ", ".join(self.client.properties[4][1])
+                                    self.client.properties[4] = " = ".join(self.client.properties[4])
+                                    self.f = open(self.client.data_file,"w")
+                                    self.f.write("\n".join(self.client.properties))
+                                    self.f.close()
+                                    self.client.send("ADD\\friend\\OK")
+                                else :
+                                    self.client.send("ADD\\friend\\404")
+                            else:
+                                self.client.send("ADD\\FRIEND\\REFUSED\\ADDING_OWN_USERNAME")
                         else:
                             self.client.send("ADD\\friend\\REFUSED")
                             log("Le client "+str(self.client.infos)+" a tente d'ajouter un ami alors qu'il n'etait pas connecte. Son acces a ete refuse. Il va etre deconnecte.")
