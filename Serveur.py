@@ -33,22 +33,23 @@ def log(text):
     log.close()
 
 def verif_path(path, folder = False):
-	if folder:
-		path+=os.sep+"creating_file"
-	if not os.path.exists(path):
-		original_path = os.getcwd()
-		for x in path.split(os.sep)[:len(path.split(os.sep))-1]:
-			try:
-				os.mkdir(x)
-			except Exception as error:
-				pass
-			os.chdir(x)
-		os.chdir(original_path)
-		if not folder:
-			a = open(path, "w")
-			a.close()
-	else:
-		pass
+    if folder:
+        path+=os.sep+"creating_file"
+    if not os.path.exists(path):
+        original_path = os.getcwd()
+        path_to_create = ""
+        for x in path.split(os.sep)[:len(path.split(os.sep))-1]:
+            path_to_create += x+os.sep
+            try:
+                os.mkdir(path_to_create)
+            except Exception as error:
+                pass
+        if not folder:
+            a = open(path, "w")
+            a.close()
+
+    else:
+        pass
 
 def find_key_in_dict(dict, phrase):
 	for cle, val in dict.items():
@@ -95,7 +96,7 @@ class Client:
         """
         Envoie un message au client.
         """
-        self.connection.send(message+chr(23))
+        self.connection.send((message+chr(23)).encode("utf-8"))
     def recv(self, lenth):
         """
         Recoit les messages du client.
@@ -236,7 +237,7 @@ class Releve(threading.Thread):
             try:
                 try:
                     while self.msg_recu == '' or not chr(23) in self.msg_recu.strip():
-                        self.msg_recu += self.client.recv(33554432)
+                        self.msg_recu += self.client.recv(33554432).decode("utf-8")
                     self.next_msg = self.msg_recu[self.msg_recu.index(chr(23))+1:]
                     self.msg_recu = self.msg_recu[:self.msg_recu.index(chr(23))].strip()
                     self.msgs_rcved.append(self.msg_recu)
@@ -438,7 +439,7 @@ class Releve(threading.Thread):
                     if self.client.logged_in:
                         verif_path("clients/messages/"+self.msg_recu.split("\\")[1]+"/"+self.client.username)
                         self.f = open("clients/messages/"+self.msg_recu.split("\\")[1]+"/"+self.client.username,"a")
-                        self.f.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+self.client.username+"]"+self.msg_recu.split("\\")[2]+"\n")
+                        self.f.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+self.client.username+"]"+"]".join("\\".join(self.msg_recu.split("\\")[2:]).split("]")[1:])+"\n")
                         self.f.close()
                         self.client.send("SEND\\OK")
                     else :
@@ -507,6 +508,18 @@ class Releve(threading.Thread):
                             self.client.send("REMOVE\\friend\\REFUSED")
                             log("Le client "+str(self.client.infos)+" a tente de supprimer l'un de ses ami alors qu'il n'etait pas connecte. Son acces a ete refuse. Il va etre deconnecte.")
                             self.client.disconnect("Action non autorisee > "+self.msg_recu)
+                
+                elif self.msg_recu.split("\\")[0] == "SET":
+                    if self.msg_recu.split("\\")[1] == "PROFILE_PICTURE" and len(self.msg_recu.split("\\")) == 3 :
+                        if self.client.logged_in:
+                            self.picture_file = open(self.client.data_file+"-datas"+os.sep+"PROFILE_PICTURE.png", "wb")
+                            self.picture_file.write(binascii.unhexlify(self.msg_recu.split("\\")[2]))
+                            self.picture_file.close()
+
+                            self.client.send("SET\\PROFILE_PICTURE\\OK")
+                        else:
+                            self.client.send("SET\\PROFILE_PICTURE\\REFUSED")
+
                 elif self.msg_recu.split("\\")[0] == "BACKUP" and len(self.msg_recu.split("\\")) > 1:
                     if self.client.logged_in:
                         """self.f = open("clients/Backups/"+self.client.username+"/backup.zip","w")
@@ -567,7 +580,7 @@ class Releve(threading.Thread):
                                 verif_path("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"new_groups"+os.sep+self.x+os.sep+self.nom)
                                 self.fileinfo = open("clients"+os.sep+"groups"+os.sep+"infos"+os.sep+self.x+os.sep+self.nom+".info", "w")
                                 self.messagefile = open("clients"+os.sep+"groups"+os.sep+"messages"+os.sep+"new_groups"+os.sep+self.x+os.sep+self.nom, "w")
-                                self.fileinfo.write("Key="+self.key+"\nMembers="+", ".join(self.dests)+"\nGroup id="+self.new_id)
+                                self.fileinfo.write("Key="+self.key+"\nMembers="+", ".join(self.dests)+"\nGroup id="+self.new_id+"\nName="+self.nom)
                                 self.messagefile.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"\\SERVER"+"]"+crpt.crypt_message(self.client.username+" has created this group with "+", ".join(self.dests), self.key))
                                 self.fileinfo.close()
                                 self.messagefile.close()

@@ -87,22 +87,23 @@ def log(text):
 	f.close()
 
 def verif_path(path, folder = False):
-	if folder:
-		path+=os.sep+"creating_file"
-	if not os.path.exists(path):
-		original_path = os.getcwd()
-		for x in path.split(os.sep)[:len(path.split(os.sep))-1]:
-			try:
-				os.mkdir(x)
-			except Exception as error:
-				pass
-			os.chdir(x)
-		os.chdir(original_path)
-		if not folder:
-			a = open(path, "w")
-			a.close()
-	else:
-		pass
+    if folder:
+        path+=os.sep+"creating_file"
+    if not os.path.exists(path):
+        original_path = os.getcwd()
+        path_to_create = ""
+        for x in path.split(os.sep)[:len(path.split(os.sep))-1]:
+            path_to_create += x+os.sep
+            try:
+                os.mkdir(path_to_create)
+            except Exception as error:
+                pass
+        if not folder:
+            a = open(path, "w")
+            a.close()
+
+    else:
+        pass
 
 def find_key_in_dict(dict, phrase):
 	for cle, val in dict.items():
@@ -757,7 +758,8 @@ def envoyer_message(dest = None, conv_type = None):
 				message = raw_input(">>")
 				if not len(message) == 0:
 					msg_crypted = crpt.crypt_message(message, key)
-					connection_server.send(("SEND\\"+destinataire+"\\"+msg_crypted+chr(23)))
+					print "Envoye : {}".format("SEND\\"+destinataire+"\\"+"["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+username+"]"+msg_crypted)
+					connection_server.send(("SEND\\"+destinataire+"\\"+"["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+username+"]"+msg_crypted+chr(23)))
 					msg_from_server = attendre_reponse()
 					if msg_from_server == "SEND\\OK":
 						prev_conv = ""
@@ -769,6 +771,7 @@ def envoyer_message(dest = None, conv_type = None):
 						except:
 							pass
 						finally:
+							verif_path(os.path.join(username, "messages"), folder = True)
 							f = open(username+os.sep+"messages"+os.sep+destinataire,"w")
 							f.write(prev_conv)
 							f.write("["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+username+"]"+message+"\n")
@@ -798,6 +801,7 @@ def envoyer_message(dest = None, conv_type = None):
 		if not len(message) == 0:
 			msg_crypted = "["+datetime.datetime.isoformat(datetime.datetime.now())+"\\"+username+"]"+crpt.crypt_message(message, key)
 			if conv_type == "single":
+				print "Message envoye : {}".format("SEND\\"+dest+"\\"+msg_crypted)
 				connection_server.send(("SEND\\"+dest+"\\"+msg_crypted+chr(23)))
 			else:
 				connection_server.send(("SEND_GROUP\\"+", ".join(members)+"\\"+id+"\\"+msg_crypted+chr(23)))

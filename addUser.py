@@ -117,7 +117,25 @@ def createUser(username, email, filename, ip_source, private_key, public_key, ve
     p.dump(table)
     f.close()
 
+    try:
+        f = open("clients"+os.sep+"convert-tables"+os.sep+"username_to_config_folder","r")
+    except IOError :
+        f = open("clients"+os.sep+"convert-tables"+os.sep+"username_to_config_folder","w")
+        f.close()
+        f = open("clients"+os.sep+"convert-tables"+os.sep+"username_to_config_folder","r")
 
+    u = pickle.Unpickler(f)
+    try:
+        table = u.load()
+    except:
+        table = {}
+    f.close()
+
+    table[username] = os.path.join("clients", "datas", filename+"-datas")
+    f = open("clients"+os.sep+"convert-tables"+os.sep+"username_to_config_folder", "w")
+    p = pickle.Pickler(f)
+    p.dump(table)
+    f.close()
 
 if __name__ == "__main__":
     args = parse_arguments()

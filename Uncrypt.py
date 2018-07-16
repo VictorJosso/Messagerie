@@ -72,19 +72,19 @@ def verif_path(path):
 
 def setup(path_given = False):
     if not path_given :
-        fichier = raw_input("Quel est le chemin d'acces au fichier à déchiffrer ? > ")
+        fichier = eval(input("Quel est le chemin d'acces au fichier à déchiffrer ? > "))
         while not verif_path(fichier):
-            print "Ce fichier est introuvable... Veuillez reessayer !"
-            fichier = raw_input("Quel est le chemin d'acces au fichier à déchiffrer ? > ")
+            print("Ce fichier est introuvable... Veuillez reessayer !")
+            fichier = eval(input("Quel est le chemin d'acces au fichier à déchiffrer ? > "))
         mdp = getpass("Veuillez saisir le mot de passe a utiliser pour dechiffer le document > ")
         while not mdp:
-            print "Le mot de passe ne doit pas etre vide... Veuillez réessayer !"
+            print("Le mot de passe ne doit pas etre vide... Veuillez réessayer !")
             mdp  = getpass("Veuillez saisir le mot de passe a utiliser pour déchiffrer le document > ")
         return fichier, mdp
     else:
         mdp = getpass("Veuillez saisir le mot de passe a utiliser pour déchiffrer le document > ")
         while not mdp:
-            print "Le mot de passe ne doit pas etre vide... Veuillez réessayer !"
+            print("Le mot de passe ne doit pas etre vide... Veuillez réessayer !")
             mdp  = getpass("Veuillez saisir le mot de passe a utiliser pour chiffer le document > ")
         return mdp
 
